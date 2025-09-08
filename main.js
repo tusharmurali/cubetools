@@ -203,6 +203,8 @@ function getMeanAndStandardDeviation(array) {
 	return [mean, stddev];
 }
 
+let stickerColours;
+
 // Colours
 function resetColours() {
 	const defaultColours = [
@@ -220,6 +222,10 @@ function resetColours() {
 
 if (!localStorage.hasOwnProperty("colourScheme")) {
 	resetColours();
+} else {
+	stickerColours = JSON.parse(localStorage.getItem("colourScheme")).map(
+		(c) => new THREE.Color(c),
+	);
 }
 
 let letterScheme;
@@ -238,10 +244,6 @@ if (!localStorage.hasOwnProperty("letterScheme")) {
 } else {
 	letterScheme = localStorage.getItem("letterScheme");
 }
-
-let stickerColours = JSON.parse(localStorage.getItem("colourScheme")).map(
-	(c) => new THREE.Color(c),
-);
 
 function updateLetters() {
 	for (const sticker of stickers) {
