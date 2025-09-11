@@ -8,7 +8,7 @@ import { FontLoader } from "three/addons/loaders/FontLoader.js";
 var letter_pairs = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X"];
 
 scramblers["333"].initialize(null, Math);
-var scramble_str = scramblers["333"].getRandomScramble().scramble_string.replace(/  /g, ' ')
+var scramble_str = scramblers["333"].getRandomScramble().scramble_string.replace(/  /g, ' ');
 var edge_letters, corner_letters, edgeIndex, cornerIndex;
 solveAndDisplay();
 
@@ -69,6 +69,7 @@ function solveAndDisplay(){
 				// To flip an edge, append the cycle given by both stickers of that edge
 				// edge_cycles.push("Flip");
 				// edge_cycles.push(flipped_edges[i], edge_cubies[j][1]);
+				edge_letters.push("#" + letter_pairs[sticker_targets[edges_to_full[letter_pairs.indexOf(edge_letters[edge_letters.length - 1])]]]);
 				edge_letters.push("f" + letter_pairs[flipped_edges[i]], letter_pairs[edge_cubies[j][1]])
 			}
 		}
@@ -97,8 +98,8 @@ function solveAndDisplay(){
 		for (var j = 0; j<8; j++) {
 			if ( corner_cubies[j][0] == cw_corners[i] ) {
 				// To rotate a corner, append the cycle given by two CW stickers of that corner
+				corner_letters.push("#" + letter_pairs[sticker_targets[corners_to_full[letter_pairs.indexOf(corner_letters[corner_letters.length - 1])]]]);
 				corner_letters.push("t" + letter_pairs[cw_corners[i]], letter_pairs[corner_cubies[j][1]])
-
 			}
 		}
 	}
@@ -106,6 +107,7 @@ function solveAndDisplay(){
 		for (var j = 0; j<8; j++) {
 			if ( corner_cubies[j][0] == ccw_corners[i] ) {
 				// To rotate a corner, append the cycle given by two CCW stickers of that corner
+				corner_letters.push("#" + letter_pairs[sticker_targets[corners_to_full[letter_pairs.indexOf(corner_letters[corner_letters.length - 1])]]]);
 				corner_letters.push("t" + letter_pairs[ccw_corners[i]], letter_pairs[corner_cubies[j][2]])
 			}
 		}
@@ -774,12 +776,6 @@ function nextCorner() {
 		
 		setTimeout(() => {
 			nextCorner();
-			nextCorner();
-		}, 600);
-	} else if (corner.twistStart) {
-		topIndicator.textContent = "Break";
-
-		setTimeout(() => {
 			nextCorner();
 		}, 600);
 	}
