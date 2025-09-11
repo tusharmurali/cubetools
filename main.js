@@ -5,6 +5,151 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 
+var letter_pairs = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X"];
+
+scramblers["333"].initialize(null, Math);
+var scramble_str = scramblers["333"].getRandomScramble().scramble_string.replace(/  /g, ' ')
+var edge_letters, corner_letters, edgeIndex, cornerIndex;
+solveAndDisplay();
+
+// Figures out a solution for the cube and displays it
+function solveAndDisplay(){
+    // Scramble the cube
+    // var scramble_str = $('#scramble').val();
+    var is_valid_scramble = true;
+
+    var valid_permutations = ["fU","U'","U2","L","L'","L2","F","F'","F2","R","R'","R2","B","B'","B2","D","D'","D2","M","M'","M2","S","S'","S2","E","E'","E2","u","u'","u2","l","l'","l2","f","f'","f2","r","r'","r2","b","b'","b2","d","d'","d2","x","x'","x2","y","y'","y2","z","z'","z2"];
+    var scramble = scramble_str.split(" ");
+    var permutations = [];
+    for (var i=0; i<scramble.length; i++ ){
+        if ( valid_permutations.indexOf(scramble[i]) != -1 ){
+            permutations.push(scramble[i]);
+        }
+        else if ( scramble[i] != '' ) {
+            is_valid_scramble = false;
+        }
+    }
+
+    // Invalid permutations are removed from the scramble
+    var valid_scramble = permutations.join(" ");
+    if ( !is_valid_scramble ){
+        console.log(valid_scramble + " ");
+    }
+
+    // Cube is scrambled
+    scrambleCube(valid_scramble);
+
+
+    // Cube with the applied moves is rendered
+    // renderCube();
+
+    // Solve the cube
+    solveCube();
+	console.log(edge_cycles, corner_cycles);
+
+    // Solution to the scramble
+    edge_letters = [];
+	corner_letters = [];
+
+    // Edges
+    if ( edge_cycles.length != 0 || flipped_edges.length != 0 ) {
+        for (var i=0; i<edge_cycles.length; i++){
+			if (edge_cycles[i] < 0) {
+				edge_letters.push("#" + letter_pairs[-(edge_cycles[i] + 1)]);
+			} else {
+            	edge_letters.push(letter_pairs[edge_cycles[i]]);
+			}
+        }
+    }
+
+	// Add flipped edges
+	for (var i = 0; i < flipped_edges.length; i++) {
+		for (var j = 0; j < 12; j++) {
+			if (edge_cubies[j][0] == flipped_edges[i]) {
+				// To flip an edge, append the cycle given by both stickers of that edge
+				// edge_cycles.push("Flip");
+				// edge_cycles.push(flipped_edges[i], edge_cubies[j][1]);
+				edge_letters.push("f" + letter_pairs[flipped_edges[i]], letter_pairs[edge_cubies[j][1]])
+			}
+		}
+	}
+	edge_letters.push("#" + letter_pairs[sticker_targets[edges_to_full[letter_pairs.indexOf(edge_letters[edge_letters.length - 1])]]]);
+
+
+    // Display parity algorithm if there is parity
+    if ( edge_cycles.length%2 == 1 ) {
+		console.log("Parity!");
+    }
+
+    // Corners
+    if ( corner_cycles.length != 0 || cw_corners.length != 0 || ccw_corners.length != 0 ) {
+        for (var i=0; i<corner_cycles.length; i++){
+			if (corner_cycles[i] < 0) {
+				corner_letters.push("#" + letter_pairs[-(corner_cycles[i] + 1)]);
+			} else {
+            	corner_letters.push(letter_pairs[corner_cycles[i]]);
+			}
+        }
+    }
+
+	// Add flipped corners
+	for (var i=0; i<cw_corners.length; i++){
+		for (var j = 0; j<8; j++) {
+			if ( corner_cubies[j][0] == cw_corners[i] ) {
+				// To rotate a corner, append the cycle given by two CW stickers of that corner
+				corner_letters.push("t" + letter_pairs[cw_corners[i]], letter_pairs[corner_cubies[j][1]])
+
+			}
+		}
+	}
+	for (var i=0; i<ccw_corners.length; i++){
+		for (var j = 0; j<8; j++) {
+			if ( corner_cubies[j][0] == ccw_corners[i] ) {
+				// To rotate a corner, append the cycle given by two CCW stickers of that corner
+				corner_letters.push("t" + letter_pairs[ccw_corners[i]], letter_pairs[corner_cubies[j][2]])
+			}
+		}
+	}
+	// console.log(letter_pairs.indexOf(corner_cycles[corner_cycles - 1]));
+	corner_letters.push("#" + letter_pairs[sticker_targets[corners_to_full[letter_pairs.indexOf(corner_letters[corner_letters.length - 1])]]]);
+
+	console.log(edge_letters);
+	console.log(corner_letters);
+	edgeIndex = 0;
+	cornerIndex = 0;
+
+    // Solution is displayed
+    // $('#edges').html(edge_pairs);
+    // $('#corners').html(corner_pairs);
+    // $('#edges-solution').html(edges_solution);
+    // $('#corners-solution').html(corners_solution);
+
+    // // Alg.cubing.net url is set
+    // $('#algcubing').attr("href", buildAlgCubingUrl(solution, valid_scramble));
+}
+
+// Generates a full link to alg.cubing.net for the algorithm
+function buildAlgCubingLink(algorithm) {
+    const link = document.createElement('a');
+    link.href = buildAlgCubingUrl(algorithm);
+    link.target = '_blank';
+    link.textContent = algorithm;
+
+    const div = document.createElement('div');
+    div.appendChild(link);
+
+    return div.outerHTML;
+}
+
+// Generates an alg.cubing.net URL for the algorithm with optional setup
+function buildAlgCubingUrl(algorithm, setup) {
+    let url = "https://alg.cubing.net/?alg=" + encodeURIComponent(algorithm.replace(/<br>/g, "\n"));
+    if (setup !== undefined) {
+        url += '&setup=' + encodeURIComponent(setup);
+    }
+    return url;
+}
+
 // ThreeJS
 const scene = new THREE.Scene();
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -501,9 +646,9 @@ positions.push(
 	})(),
 );
 
-function randomRange(min, max) {
-	return min + Math.floor(Math.random() * max);
-}
+// function randomRange(min, max) {
+// 	return min + Math.floor(Math.random() * max);
+// }
 
 let currentCorner;
 let currentEdge;
@@ -562,111 +707,137 @@ function reset() {
 	playing = false;
 	setModePreview();
 
-	startLetter = edges ? letterScheme[43] : letterScheme[21];
+	startLetter = edges ? letterScheme[16] : letterScheme[12];
+	// startLetter = edges ? letterScheme[43] : letterScheme[21];
 
 	topIndicator.textContent = `Press ${startLetter.toUpperCase()} to start`;
 	resetButtons.hidden = true;
 	bottomIndicator.textContent = "Press SPACE to change mode";
 
-	currentCorner = { ...cornersData[7] };
+	currentCorner = { ...cornersData[4] };
 	currentCorner.twist = 0;
-	currentCorner.answer = letterScheme[21].toUpperCase();
+	// currentCorner.answer = letterScheme[21].toUpperCase();
+	currentCorner.answer = "Buffer";
 
-	currentEdge = { ...edgesData[9] };
+	currentEdge = { ...edgesData[10] };
 	currentEdge.flip = true;
-	currentEdge.answer = letterScheme[43].toUpperCase();
+	// currentEdge.answer = letterScheme[43].toUpperCase();
+	currentEdge.answer = "Buffer";
+
+	cornerIndex = 0;
+	edgeIndex = 0;
 }
 
-function getWeightedRandom(weights) {
-	let sum = 0;
-	const r = Math.random();
-	const total = weights.reduce((a, c) => a + c || 0, 0);
-	const normalized = weights.map((w) => w / total);
-	for (let i = 0; i < weights.length; i++) {
-		sum += normalized[i];
-		if (r <= sum) {
-			return i;
-		}
+function getNextCorner() {
+	if (cornerIndex >= corner_letters.length) return;
+	let letter = corner_letters[cornerIndex++];
+	let twistStart = letter.startsWith("t"), cycleBreak = letter.startsWith("#");
+	if (twistStart || cycleBreak) {
+		letter = letter.charAt(1);
 	}
-	console.log("hmm, this code should be unreachable");
-	console.log(weights);
-	console.log(total, normalized);
-	return Math.floor(Math.random() * weights.length);
+	const index = letterScheme.indexOf(letter.toLowerCase());
+	const twist = (index - currentCorner.twist + 3) % 3;
+
+	return { ...cornersData[Math.floor(index / 3)], twist, twistStart, cycleBreak };
 }
 
-function getRandomCorner() {
-	const weights = times.slice(0, 24).map((stickerTimes, index) => {
-		if (
-			currentCorner.position === cornersData[Math.floor(index / 3)].position
-		) {
-			return 0;
-		}
-		const [mean, _] = getMeanAndStandardDeviation(stickerTimes);
-		return mean || 10000;
-	});
+function getNextEdge() {
+	if (edgeIndex >= edge_letters.length) return;
+	let letter = edge_letters[edgeIndex++];
+	let flipStart = letter.startsWith("f"), cycleBreak = letter.startsWith("#");
+	if (flipStart || cycleBreak) {
+		letter = letter.charAt(1);
+	}
+	const index = letterScheme.slice(24, 48).indexOf(letter.toLowerCase());
+	const flip = index % 2 ^ currentEdge.flip;
 
-	const index = getWeightedRandom(weights);
-	const twist = index % 3;
-
-	return { ...cornersData[Math.floor(index / 3)], twist };
-}
-
-function getRandomEdge() {
-	const weights = times.slice(24, 48).map((stickerTimes, index) => {
-		if (currentEdge.position === edgesData[Math.floor(index / 2)].position) {
-			return 0;
-		}
-		const [mean, _] = getMeanAndStandardDeviation(stickerTimes);
-		return mean || 10000;
-	});
-
-	const index = getWeightedRandom(weights);
-	const flip = index % 2;
-
-	return { ...edgesData[Math.floor(index / 2)], flip };
+	return { ...edgesData[Math.floor(index / 2)], flip, flipStart, cycleBreak };
 }
 
 function nextCorner() {
-	topIndicator.textContent = currentCorner.answer.toUpperCase();
+	console.log(currentCorner);
+	topIndicator.textContent = (
+		currentCorner.twistStart
+			? "Twist " + currentCorner.answer
+			: currentCorner.answer
+	).toUpperCase();
 
 	setPiecesGray();
 
-	const corner = getRandomCorner();
+	const corner = getNextCorner();
+	console.log(corner);
+	if (!corner) {
+		topIndicator.textContent = "Finished";
+		return;
+	} else if (corner.cycleBreak) {
+		topIndicator.textContent = "Break";
+		
+		setTimeout(() => {
+			nextCorner();
+			nextCorner();
+		}, 600);
+	} else if (corner.twistStart) {
+		topIndicator.textContent = "Break";
 
+		setTimeout(() => {
+			nextCorner();
+		}, 600);
+	}
+	// const answer = corner_letters[cornerIndex++].toLowerCase();
+	// const index = letterScheme.indexOf(answer);
+	// const twist = index % 3;
+	// const corner = {...cornersData[Math.floor(index / 3)], twist};
+	// console.log(corner);
 	for (let i = 0; i < 3; i++) {
 		stickers[currentCorner.stickers[i]].targetColour =
 			stickers[corner.stickers[(i + corner.twist) % 3]].solvedColour;
 	}
 
-	//for (const timeout of timeouts) {
-	//clearTimeout(timeout);
 	let newPos = currentCorner.position;
 	if (allowTwoSideRecognition && [0, 1, 4, 5].includes(newPos)) {
 		newPos += 2;
-		//timeouts.push(setTimeout(() => (positionCounter = newPos - 2), 3000));
 	}
 
 	positionCounter = newPos;
 
+	
 	const relativeTwist = (currentCorner.twist + corner.twist) % 3;
 	const index = corner.position * 3 + relativeTwist;
 	const answer = letterScheme[index];
+	// console.log(index, Math.floor(index / 3), corner.position, index % 3, relativeTwist, answer, letterScheme.indexOf(answer));
 
 	currentCorner = { ...corner };
 	currentCorner.twist = relativeTwist;
 	currentCorner.answer = answer;
 	currentCorner.index = index;
 
+	// console.log(currentCorner);
+
 	startTime = new Date().getTime();
-	//console.log(answer);
+	// console.log(answer);
 }
 
 function nextEdge() {
-	topIndicator.textContent = currentEdge.answer.toUpperCase();
+	topIndicator.textContent = (
+		currentEdge.flipStart
+			? "Flip " + currentEdge.answer
+			: currentEdge.answer
+	).toUpperCase();
 
 	setPiecesGray();
 
-	let edge = getRandomEdge();
+	let edge = getNextEdge();
+	if (!edge) {
+		topIndicator.textContent = "Finished";
+		return;
+	} else if (edge.cycleBreak) {
+		topIndicator.textContent = "Break";
+		
+		setTimeout(() => {
+			nextEdge();
+			nextEdge();
+		}, 600);
+	}
 
 	for (let i = 0; i < 2; i++) {
 		stickers[currentEdge.stickers[i]].targetColour =
@@ -677,6 +848,7 @@ function nextEdge() {
 	const relativeFlip = currentEdge.flip != edge.flip;
 	const index = 24 + (edge.position - 8) * 2 + relativeFlip;
 	const answer = letterScheme[index];
+	// console.log(edge, index, letterScheme[index]);
 
 	currentEdge = { ...edge };
 	currentEdge.flip = relativeFlip;
@@ -686,6 +858,7 @@ function nextEdge() {
 	startTime = new Date().getTime();
 	//console.log(answer);
 }
+
 
 let playing = false;
 //let playing = true;
