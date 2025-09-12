@@ -193,6 +193,10 @@ const parityCheckbox = document.getElementById("parity-checkbox");
 const memoFeedback = document.getElementById("memo-feedback");
 const scrambleInput = document.getElementById("scramble-input");
 
+const cycleBreakDuration = 600;
+const transitionDuration = 1000;
+let pausedTime = 0;
+
 document.getElementById("start-trainer").addEventListener("click", startGame);
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -719,6 +723,7 @@ function reset() {
 	orbit = false;
 	edges = false;
 	mistakes = 0;
+	pausedTime = 0;
 	letterMaterial.visible = false;
 
 	if (resetTimeout) {
@@ -799,9 +804,9 @@ function nextCorner() {
 	topIndicator.textContent = 
 		currentCorner.twistStart
 			? currentCorner.answer.toUpperCase() + " (Twist)"
-			: currentCorner.buffer 
+			: (currentCorner.buffer 
 				? "Buffer"
-				: currentCorner.answer.toUpperCase();
+				: currentCorner.answer.toUpperCase());
 
 	setPiecesGray();
 
@@ -818,11 +823,12 @@ function nextCorner() {
 				? " (Break)" 
 				: " (Finished)");
 		inputBlocked = true;
+		pausedTime += cycleBreakDuration;
 		setTimeout(() => {
 			inputBlocked = false;
 			nextCorner();
 			nextCorner();
-		}, 600);
+		}, cycleBreakDuration);
 	}
 	// const answer = corner_letters[cornerIndex++].toLowerCase();
 	// const index = letterScheme.indexOf(answer);
@@ -862,33 +868,34 @@ function nextEdge() {
 	topIndicator.textContent = 
 		currentEdge.flipStart
 			? currentEdge.answer.toUpperCase() + " (Flip)"
-			: currentEdge.buffer 
+			: (currentEdge.buffer 
 				? "Buffer"
-				: currentEdge.answer.toUpperCase();
+				: currentEdge.answer.toUpperCase());
 
 	setPiecesGray();
 
 	let edge = getNextEdge();
 	if (!edge) {
 		if (edgeIndex !== 0) {
-		topIndicator.textContent = "Finished";
-		memoEndTime = Date.now();
-		promptUserMemo();
+			topIndicator.textContent = "Finished";
+			memoEndTime = Date.now();
+			promptUserMemo();
 		}
 		return;
 	} else if (edge && edge.cycleBreak) {
-		topIndicator.textContent = edgeIndex < edge_letters.length - 1 ? "Break" : "Finished";
+		// topIndicator.textContent = edgeIndex < edge_letters.length - 1 ? "Break" : "Finished";
 		topIndicator.textContent = currentEdge.answer.toUpperCase() 
 			+ (edgeIndex < edge_letters.length - 1
-				? " (Flip)" 
+				? " (Break)" 
 				: " (Finished)");
 
 		inputBlocked = true;
+		pausedTime += cycleBreakDuration;
 		setTimeout(() => {
 			inputBlocked = false;
 			nextEdge();
 			nextEdge();
-		}, 600);
+		}, cycleBreakDuration);
 	}
 
 	for (let i = 0; i < 2; i++) {
@@ -915,7 +922,8 @@ function startEdges() {
     edges = true;
     edgeIndex = -1;
     topIndicator.textContent = "Get ready for edges...";
-    setTimeout(nextEdge, 1000);
+	pausedTime += transitionDuration;
+    setTimeout(nextEdge, transitionDuration);
 }
 
 function chunkPairs(str) {
@@ -956,13 +964,13 @@ function promptUserMemo() {
 			const edgePairs = chunkPairs(edge_solution).join(" ");
 			const cornerPairs = chunkPairs(corner_solution).join(" ");
 			memoFeedback.classList.add("error");
-			memoFeedback.textContent =
-				`❌ Edges: ${edgePairs} · ` +
-				`Parity: ${edge_solution.length % 2 === 1 ? "Yes" : "No"} · ` +
-				`Corners: ${cornerPairs}`;
+			memoFeedback.innerHTML =
+				`❌ Edges: ${edgePairs}<br>` +
+				`Corners: ${cornerPairs}<br>` +
+				`Parity: ${edge_solution.length % 2 === 1 ? "Yes" : "No"}`;
 		}
 
-		const memoDuration = ((memoEndTime - memoStartTime) / 1000).toFixed(2);
+		const memoDuration = ((memoEndTime - memoStartTime - pausedTime) / 1000).toFixed(2);
 		const memoTimeIndicator = document.createElement("span");
 		memoTimeIndicator.classList.add("memo-time");
 		memoTimeIndicator.style.marginTop = "8px";
@@ -974,7 +982,6 @@ function promptUserMemo() {
 		mistakesIndicator.textContent = `Memo Mistakes: ${mistakes}`;
 		memoFeedback.appendChild(mistakesIndicator);
 	};
-
 }
 
 
@@ -997,6 +1004,7 @@ function startGame() {
 	memoStartTime = Date.now();
     memoEndTime = null;
 	topIndicator.textContent = "Get ready...";
+	pausedTime += transitionDuration;
 	timeouts.push(
 		setTimeout(() => {
 			if (edges) {
@@ -1004,7 +1012,7 @@ function startGame() {
 			} else {
 				nextCorner();
 			}
-		}, 1000),
+		}, transitionDuration),
 	);
 }
 
