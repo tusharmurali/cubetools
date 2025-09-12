@@ -751,12 +751,12 @@ function reset() {
 	currentCorner = { ...cornersData[4] };
 	currentCorner.twist = 0;
 	// currentCorner.answer = letterScheme[21].toUpperCase();
-	currentCorner.answer = "Buffer";
+	currentCorner.buffer = true;
 
 	currentEdge = { ...edgesData[10] };
 	currentEdge.flip = true;
 	// currentEdge.answer = letterScheme[43].toUpperCase();
-	currentEdge.answer = "Buffer";
+	currentEdge.buffer = true;
 
 	cornerIndex = 0;
 	edgeIndex = 0;
@@ -792,13 +792,6 @@ function getNextEdge() {
 	return { ...edgesData[Math.floor(index / 2)], flip, flipStart, cycleBreak };
 }
 
-function startEdges() {
-    edges = true;
-    edgeIndex = -1;
-    topIndicator.textContent = "Get ready for edges...";
-    setTimeout(nextEdge, 1000);
-}
-
 let inputBlocked = false;
 
 function nextCorner() {
@@ -806,7 +799,9 @@ function nextCorner() {
 	topIndicator.textContent = 
 		currentCorner.twistStart
 			? currentCorner.answer.toUpperCase() + " (Twist)"
-			: currentCorner.answer.toUpperCase();
+			: currentCorner.buffer 
+				? "Buffer"
+				: currentCorner.answer.toUpperCase();
 
 	setPiecesGray();
 
@@ -867,7 +862,9 @@ function nextEdge() {
 	topIndicator.textContent = 
 		currentEdge.flipStart
 			? currentEdge.answer.toUpperCase() + " (Flip)"
-			: currentEdge.answer.toUpperCase();
+			: currentEdge.buffer 
+				? "Buffer"
+				: currentEdge.answer.toUpperCase();
 
 	setPiecesGray();
 
@@ -912,6 +909,13 @@ function nextEdge() {
 
 	startTime = new Date().getTime();
 	//console.log(answer);
+}
+
+function startEdges() {
+    edges = true;
+    edgeIndex = -1;
+    topIndicator.textContent = "Get ready for edges...";
+    setTimeout(nextEdge, 1000);
 }
 
 function chunkPairs(str) {
