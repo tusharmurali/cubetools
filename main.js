@@ -8,17 +8,25 @@ import { FontLoader } from "three/addons/loaders/FontLoader.js";
 var letter_pairs = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X"];
 
 scramblers["333"].initialize(null, Math);
-var scramble_str = scramblers["333"].getRandomScramble().scramble_string.replace(/  /g, ' ');
-var edge_letters, corner_letters, edgeIndex, cornerIndex;
-solveAndDisplay();
+// let scramble_str = ""; 
+let edge_solution = "", corner_solution = "";
+let edge_letters, corner_letters, edgeIndex, cornerIndex;
+let memoStartTime = null, memoEndTime = null, mistakes = 0;
+
+// Start automatically with random scramble
+// scrambleInput.value = scramblers["333"].getRandomScramble().scramble_string.replace(/  /g, ' ');
+// document.getElementById("scramble-input").value = scramble_str;
 
 // Figures out a solution for the cube and displays it
 function solveAndDisplay(){
     // Scramble the cube
-    // var scramble_str = $('#scramble').val();
+    var scramble_str = scrambleInput.value;
+	if (scramble_str.length === 0) {
+		scramble_str = scramblers["333"].getRandomScramble().scramble_string.replace(/  /g, ' ');
+	}
     var is_valid_scramble = true;
 
-    var valid_permutations = ["fU","U'","U2","L","L'","L2","F","F'","F2","R","R'","R2","B","B'","B2","D","D'","D2","M","M'","M2","S","S'","S2","E","E'","E2","u","u'","u2","l","l'","l2","f","f'","f2","r","r'","r2","b","b'","b2","d","d'","d2","x","x'","x2","y","y'","y2","z","z'","z2"];
+    var valid_permutations = ["U","U'","U2","L","L'","L2","F","F'","F2","R","R'","R2","B","B'","B2","D","D'","D2","M","M'","M2","S","S'","S2","E","E'","E2","u","u'","u2","l","l'","l2","f","f'","f2","r","r'","r2","b","b'","b2","d","d'","d2","x","x'","x2","y","y'","y2","z","z'","z2"];
     var scramble = scramble_str.split(" ");
     var permutations = [];
     for (var i=0; i<scramble.length; i++ ){
@@ -33,23 +41,20 @@ function solveAndDisplay(){
     // Invalid permutations are removed from the scramble
     var valid_scramble = permutations.join(" ");
     if ( !is_valid_scramble ){
-        console.log(valid_scramble + " ");
+        scrambleInput.value = valid_scramble + " ";
     }
 
     // Cube is scrambled
     scrambleCube(valid_scramble);
 
-
-    // Cube with the applied moves is rendered
-    // renderCube();
-
     // Solve the cube
     solveCube();
-	console.log(edge_cycles, corner_cycles);
 
     // Solution to the scramble
     edge_letters = [];
 	corner_letters = [];
+	edge_solution = "";
+	corner_solution = "";
 
     // Edges
     if ( edge_cycles.length != 0 || flipped_edges.length != 0 ) {
@@ -57,6 +62,7 @@ function solveAndDisplay(){
 			if (edge_cycles[i] < 0) {
 				edge_letters.push("#" + letter_pairs[-(edge_cycles[i] + 1)]);
 			} else {
+				edge_solution += letter_pairs[edge_cycles[i]]
             	edge_letters.push(letter_pairs[edge_cycles[i]]);
 			}
         }
@@ -67,20 +73,13 @@ function solveAndDisplay(){
 		for (var j = 0; j < 12; j++) {
 			if (edge_cubies[j][0] == flipped_edges[i]) {
 				// To flip an edge, append the cycle given by both stickers of that edge
-				// edge_cycles.push("Flip");
-				// edge_cycles.push(flipped_edges[i], edge_cubies[j][1]);
 				edge_letters.push("#" + letter_pairs[sticker_targets[edges_to_full[letter_pairs.indexOf(edge_letters[edge_letters.length - 1])]]]);
 				edge_letters.push("f" + letter_pairs[flipped_edges[i]], letter_pairs[edge_cubies[j][1]])
+				edge_solution += letter_pairs[flipped_edges[i]] + letter_pairs[edge_cubies[j][1]];
 			}
 		}
 	}
 	edge_letters.push("#" + letter_pairs[sticker_targets[edges_to_full[letter_pairs.indexOf(edge_letters[edge_letters.length - 1])]]]);
-
-
-    // Display parity algorithm if there is parity
-    if ( edge_cycles.length%2 == 1 ) {
-		console.log("Parity!");
-    }
 
     // Corners
     if ( corner_cycles.length != 0 || cw_corners.length != 0 || ccw_corners.length != 0 ) {
@@ -89,6 +88,7 @@ function solveAndDisplay(){
 				corner_letters.push("#" + letter_pairs[-(corner_cycles[i] + 1)]);
 			} else {
             	corner_letters.push(letter_pairs[corner_cycles[i]]);
+				corner_solution += letter_pairs[corner_cycles[i]];
 			}
         }
     }
@@ -99,7 +99,8 @@ function solveAndDisplay(){
 			if ( corner_cubies[j][0] == cw_corners[i] ) {
 				// To rotate a corner, append the cycle given by two CW stickers of that corner
 				corner_letters.push("#" + letter_pairs[sticker_targets[corners_to_full[letter_pairs.indexOf(corner_letters[corner_letters.length - 1])]]]);
-				corner_letters.push("t" + letter_pairs[cw_corners[i]], letter_pairs[corner_cubies[j][1]])
+				corner_letters.push("t" + letter_pairs[cw_corners[i]], letter_pairs[corner_cubies[j][1]]);
+				corner_solution += letter_pairs[cw_corners[i]] + letter_pairs[corner_cubies[j][1]];
 			}
 		}
 	}
@@ -108,15 +109,15 @@ function solveAndDisplay(){
 			if ( corner_cubies[j][0] == ccw_corners[i] ) {
 				// To rotate a corner, append the cycle given by two CCW stickers of that corner
 				corner_letters.push("#" + letter_pairs[sticker_targets[corners_to_full[letter_pairs.indexOf(corner_letters[corner_letters.length - 1])]]]);
-				corner_letters.push("t" + letter_pairs[ccw_corners[i]], letter_pairs[corner_cubies[j][2]])
+				corner_letters.push("t" + letter_pairs[ccw_corners[i]], letter_pairs[corner_cubies[j][2]]);
+				corner_solution += letter_pairs[ccw_corners[i]] + letter_pairs[corner_cubies[j][2]];
 			}
 		}
 	}
 	// console.log(letter_pairs.indexOf(corner_cycles[corner_cycles - 1]));
 	corner_letters.push("#" + letter_pairs[sticker_targets[corners_to_full[letter_pairs.indexOf(corner_letters[corner_letters.length - 1])]]]);
 
-	console.log(edge_letters);
-	console.log(corner_letters);
+	console.log(edge_letters, corner_letters, edge_solution, corner_solution);
 	edgeIndex = 0;
 	cornerIndex = 0;
 
@@ -183,6 +184,31 @@ const topIndicator = document.getElementById("top-indicator");
 const bottomIndicator = document.getElementById("bottom-indicator");
 const resetButtons = document.getElementById("reset-buttons");
 const dataContainer = document.getElementById("data-container");
+const scrambleControls = document.getElementById("scramble-controls");
+const creditNote = document.getElementById("credit-note");
+const memoControls = document.getElementById("memo-controls");
+const edgesInput = document.getElementById("edges-input");
+const cornersInput = document.getElementById("corners-input");
+const parityCheckbox = document.getElementById("parity-checkbox");
+const memoFeedback = document.getElementById("memo-feedback");
+const scrambleInput = document.getElementById("scramble-input");
+
+document.getElementById("start-trainer").addEventListener("click", startGame);
+
+const urlParams = new URLSearchParams(window.location.search);
+const urlScramble = urlParams.get("scramble");
+if (urlScramble) {
+    scrambleInput.value = urlScramble;
+    // scramble_str = urlScramble;
+}
+
+scrambleInput.addEventListener("input", (e) => {
+	solveAndDisplay();
+    const val = e.target.value.trim();
+    const url = new URL(window.location);
+    url.searchParams.set("scramble", val);
+    window.history.replaceState({}, "", url);
+});
 
 // Constants
 const abc = "abcdefghijklmnopqrstluvwxyz";
@@ -674,14 +700,14 @@ function setPiecesSolved() {
 	}
 }
 
-function setModePreview() {
-	setPiecesSolved();
-	for (const pieceData of edges ? cornersData : edgesData) {
-		for (const i of pieceData.stickers) {
-			stickers[i].targetColour = stickerColours[6];
-		}
-	}
-}
+// function setModePreview() {
+// 	setPiecesSolved();
+// 	for (const pieceData of edges ? cornersData : edgesData) {
+// 		for (const i of pieceData.stickers) {
+// 			stickers[i].targetColour = stickerColours[6];
+// 		}
+// 	}
+// }
 
 let resetTimeout = setTimeout(() => {
 	if (!playing && !orbit) {
@@ -691,6 +717,8 @@ let resetTimeout = setTimeout(() => {
 
 function reset() {
 	orbit = false;
+	edges = false;
+	mistakes = 0;
 	letterMaterial.visible = false;
 
 	if (resetTimeout) {
@@ -707,14 +735,18 @@ function reset() {
 
 	controls.enableRotate = true;
 	playing = false;
-	setModePreview();
+	setPiecesSolved();
 
 	startLetter = edges ? letterScheme[16] : letterScheme[12];
 	// startLetter = edges ? letterScheme[43] : letterScheme[21];
 
 	topIndicator.textContent = `Press ${startLetter.toUpperCase()} to start`;
 	resetButtons.hidden = true;
-	bottomIndicator.textContent = "Press SPACE to change mode";
+	bottomIndicator.textContent = "Press SPACE to change scheme";
+	scrambleControls.style.display = "flex";
+	memoControls.style.display = "none";
+	memoFeedback.style.display = "none";
+	creditNote.style.display = "block";
 
 	currentCorner = { ...cornersData[4] };
 	currentCorner.twist = 0;
@@ -745,6 +777,10 @@ function getNextCorner() {
 
 function getNextEdge() {
 	if (edgeIndex >= edge_letters.length) return;
+	if (edgeIndex < 0) {
+		edgeIndex++;
+		return;
+	}
 	let letter = edge_letters[edgeIndex++];
 	let flipStart = letter.startsWith("f"), cycleBreak = letter.startsWith("#");
 	if (flipStart || cycleBreak) {
@@ -756,13 +792,21 @@ function getNextEdge() {
 	return { ...edgesData[Math.floor(index / 2)], flip, flipStart, cycleBreak };
 }
 
+function startEdges() {
+    edges = true;
+    edgeIndex = -1;
+    topIndicator.textContent = "Get ready for edges...";
+    setTimeout(nextEdge, 1000);
+}
+
+let inputBlocked = false;
+
 function nextCorner() {
-	console.log(currentCorner);
-	topIndicator.textContent = (
+	// console.log(currentCorner);
+	topIndicator.textContent = 
 		currentCorner.twistStart
-			? "Twist " + currentCorner.answer
-			: currentCorner.answer
-	).toUpperCase();
+			? currentCorner.answer.toUpperCase() + " (Twist)"
+			: currentCorner.answer.toUpperCase();
 
 	setPiecesGray();
 
@@ -770,11 +814,18 @@ function nextCorner() {
 	console.log(corner);
 	if (!corner) {
 		topIndicator.textContent = "Finished";
+
+		// Auto-start edges
+        startEdges();
 		return;
 	} else if (corner.cycleBreak) {
-		topIndicator.textContent = "Break";
-		
+		topIndicator.textContent = currentCorner.answer.toUpperCase() 
+			+ (cornerIndex < corner_letters.length - 1 
+				? " (Break)" 
+				: " (Finished)");
+		inputBlocked = true;
 		setTimeout(() => {
+			inputBlocked = false;
 			nextCorner();
 			nextCorner();
 		}, 600);
@@ -814,22 +865,31 @@ function nextCorner() {
 }
 
 function nextEdge() {
-	topIndicator.textContent = (
+	topIndicator.textContent = 
 		currentEdge.flipStart
-			? "Flip " + currentEdge.answer
-			: currentEdge.answer
-	).toUpperCase();
+			? currentEdge.answer.toUpperCase() + " (Flip)"
+			: currentEdge.answer.toUpperCase();
 
 	setPiecesGray();
 
 	let edge = getNextEdge();
 	if (!edge) {
+		if (edgeIndex !== 0) {
 		topIndicator.textContent = "Finished";
+		memoEndTime = Date.now();
+		promptUserMemo();
+		}
 		return;
-	} else if (edge.cycleBreak) {
-		topIndicator.textContent = "Break";
-		
+	} else if (edge && edge.cycleBreak) {
+		topIndicator.textContent = edgeIndex < edge_letters.length - 1 ? "Break" : "Finished";
+		topIndicator.textContent = currentEdge.answer.toUpperCase() 
+			+ (edgeIndex < edge_letters.length - 1
+				? " (Flip)" 
+				: " (Finished)");
+
+		inputBlocked = true;
 		setTimeout(() => {
+			inputBlocked = false;
 			nextEdge();
 			nextEdge();
 		}, 600);
@@ -855,14 +915,106 @@ function nextEdge() {
 	//console.log(answer);
 }
 
+function chunkPairs(str) {
+  return str.match(/.{1,2}/g) || [];
+}
+
+function promptUserMemo() {
+    // playing = false;
+    inputBlocked = false;
+    topIndicator.textContent = "";
+
+    memoControls.style.display = "flex";
+    // memoFeedback.style.display = "block";
+    edgesInput.value = "";
+    cornersInput.value = "";
+    parityCheckbox.checked = false;
+    memoFeedback.textContent = "";
+
+    // Hook up submit button
+    const submitBtn = document.getElementById("submit-memo");
+    submitBtn.onclick = () => {
+		const userEdges = edgesInput.value.replace(/\s+/g, "").toUpperCase();
+		const userCorners = cornersInput.value.replace(/\s+/g, "").toUpperCase();
+		const userParity = parityCheckbox.checked;
+
+		const parityCorrect = (edge_solution.length % 2 === 1) === userParity;
+		const edgesCorrect = userEdges === edge_solution;
+		const cornersCorrect = userCorners === corner_solution;
+
+		memoControls.style.display = "none";
+		memoFeedback.style.display = "block";
+		memoFeedback.className = "";
+
+		if (edgesCorrect && cornersCorrect && parityCorrect) {
+			memoFeedback.classList.add("success");
+			memoFeedback.textContent = "✅ All correct!";
+		} else {
+			const edgePairs = chunkPairs(edge_solution).join(" ");
+			const cornerPairs = chunkPairs(corner_solution).join(" ");
+			memoFeedback.classList.add("error");
+			memoFeedback.textContent =
+				`❌ Edges: ${edgePairs} · ` +
+				`Parity: ${edge_solution.length % 2 === 1 ? "Yes" : "No"} · ` +
+				`Corners: ${cornerPairs}`;
+		}
+
+		const memoDuration = ((memoEndTime - memoStartTime) / 1000).toFixed(2);
+		const memoTimeIndicator = document.createElement("span");
+		memoTimeIndicator.classList.add("memo-time");
+		memoTimeIndicator.style.marginTop = "8px";
+		memoTimeIndicator.textContent = `Memo Time: ${memoDuration}s`;
+		memoFeedback.appendChild(memoTimeIndicator);
+
+		const mistakesIndicator = document.createElement("span");
+		mistakesIndicator.classList.add("memo-time"); 
+		mistakesIndicator.textContent = `Memo Mistakes: ${mistakes}`;
+		memoFeedback.appendChild(mistakesIndicator);
+	};
+
+}
+
 
 let playing = false;
-//let playing = true;
 let edges = false;
-
 let timeouts = [];
 
+function startGame() {
+	solveAndDisplay();
+
+	bottomIndicator.textContent = "Press SPACE to exit";
+	scrambleControls.style.display = "none";
+	creditNote.style.display = "none";
+	playing = true;
+	controls.enableRotate = false;
+	controls.autoRotate = false;
+	positionCounter = 20;
+	setPiecesGray();
+
+	memoStartTime = Date.now();
+    memoEndTime = null;
+	topIndicator.textContent = "Get ready...";
+	timeouts.push(
+		setTimeout(() => {
+			if (edges) {
+				nextEdge();
+			} else {
+				nextCorner();
+			}
+		}, 1000),
+	);
+}
+
 document.body.addEventListener("keyup", (e) => {
+	const active = document.activeElement;
+    if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA")) {
+        // If we're typing into an input/textarea, ignore trainer shortcuts
+        return;
+    }
+	if (inputBlocked) {
+		return;
+	}
+
 	if (playing) {
 		if (e.key === " ") {
 			for (const timeout of timeouts) {
@@ -883,6 +1035,7 @@ document.body.addEventListener("keyup", (e) => {
 				nextCorner();
 			}
 		} else if (abc.includes(e.key)) {
+			mistakes++;
 			scene.background = new THREE.Color(0x862121);
 			setTimeout(() => (scene.background = grayColour), 200);
 		}
@@ -921,28 +1074,21 @@ document.body.addEventListener("keyup", (e) => {
 
 	switch (e.key) {
 		case startLetter:
-			bottomIndicator.textContent = "Press SPACE to exit";
-			playing = true;
-			controls.enableRotate = false;
-			controls.autoRotate = false;
-			positionCounter = 20;
-			setPiecesGray();
-
-			topIndicator.textContent = "Get ready...";
-			timeouts.push(
-				setTimeout(() => {
-					if (edges) {
-						nextEdge();
-					} else {
-						nextCorner();
-					}
-				}, 1000),
-			);
-
+			startGame();
 			break;
 		case " ":
-			edges = !edges;
 			reset();
+			if (!playing && !inEditor) {
+				orbit = true;
+				letterMaterial.visible = true;
+				controls.autoRotate = false;
+				// setPiecesSolved();
+				topIndicator.textContent = "Scheme editor";
+				resetButtons.hidden = false;
+				bottomIndicator.textContent = "Press SPACE to go back";
+				scrambleControls.style.display = "none";
+				inEditor = true;
+			}
 			break;
 	}
 });
@@ -951,31 +1097,35 @@ let orbit = false;
 let inEditor = false;
 let mouseDown = false;
 
-renderer.domElement.addEventListener("mousedown", (e) => {
-	mouseDown = true;
-	pointerDown.x = e.clientX;
-	pointerDown.y = e.clientY;
-	if (!playing && !inEditor) {
-		orbit = true;
-		letterMaterial.visible = true;
-		controls.autoRotate = false;
-		setPiecesSolved();
-		topIndicator.textContent = "Scheme editor";
-		resetButtons.hidden = false;
-		bottomIndicator.textContent = "Press SPACE to go back";
-		inEditor = true;
-	}
-});
+// function openEditor() {
+// 	if (!playing && !inEditor) {
+// 		orbit = true;
+// 		letterMaterial.visible = true;
+// 		controls.autoRotate = false;
+// 		setPiecesSolved();
+// 		topIndicator.textContent = "Scheme editor";
+// 		resetButtons.hidden = false;
+// 		bottomIndicator.textContent = "Press SPACE to go back";
+// 		inEditor = true;
+// 	}
+// }
+
+// renderer.domElement.addEventListener("mousedown", (e) => {
+// 	mouseDown = true;
+// 	pointerDown.x = e.clientX;
+// 	pointerDown.y = e.clientY;
+// 	openEditor();
+// });
 
 function updateColours() {
 	for (let i = 0; i < stickers.length; i++) {
 		stickers[i].solvedColour = stickerColours[Math.floor(i / 9)];
 	}
-	if (orbit) {
-		setPiecesSolved();
-		return;
-	}
-	setModePreview();
+	// if (orbit) {
+	setPiecesSolved();
+		// return;
+	// }
+	// setModePreview();
 }
 
 colourPicker.addEventListener("change", (e) => {
@@ -991,7 +1141,7 @@ colourPicker.addEventListener("change", (e) => {
 	localStorage.setItem("colourScheme", JSON.stringify(colours));
 
 	updateColours();
-	setPiecesSolved();
+	// setPiecesSolved();
 });
 
 let selectedSticker = null;
