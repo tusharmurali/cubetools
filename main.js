@@ -117,7 +117,7 @@ function solveAndDisplay(){
 	// console.log(letter_pairs.indexOf(corner_cycles[corner_cycles - 1]));
 	corner_letters.push("#" + letter_pairs[sticker_targets[corners_to_full[letter_pairs.indexOf(corner_letters[corner_letters.length - 1])]]]);
 
-	console.log(edge_letters, corner_letters, edge_solution, corner_solution);
+	// console.log(edge_letters, corner_letters, edge_solution, corner_solution);
 	edgeIndex = 0;
 	cornerIndex = 0;
 
@@ -811,7 +811,6 @@ function nextCorner() {
 	setPiecesGray();
 
 	const corner = getNextCorner();
-	console.log(corner);
 	if (!corner) {
 		topIndicator.textContent = "Finished";
 

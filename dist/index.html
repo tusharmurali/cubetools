@@ -2,13 +2,27 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
-		<title>Three Cube</title>
-		<script type="module" crossorigin src="/cubetools/assets/index-Y1FZ3GWg.js"></script>
-		<link rel="stylesheet" crossorigin href="/cubetools/assets/index-B2oTAuKu.css">
+		<title>CubeTools</title>
+		<script type="module" crossorigin src="/cubetools/assets/index-BjA-Hlal.js"></script>
+		<link rel="stylesheet" crossorigin href="/cubetools/assets/index-DY9FhXcD.css">
 	</head>
 	<body>
 		<p id="top-indicator" class="indicator"></p>
+		<div id="memo-controls" class="indicator">
+			<input type="text" id="edges-input" placeholder="Edges" class="memo-input" />
+			<label style="font-size: 16px; display: flex; gap: 8px; align-items: center;"><input type="checkbox" id="parity-checkbox" style="margin: auto;"/> Parity?</label>
+			<input type="text" id="corners-input" placeholder="Corners" class="memo-input" />
+			<button id="submit-memo">Submit</button>
+		</div>
+		<p id="memo-feedback" style="font-weight: bold;"></p>
+		<div id="scramble-controls">
+			<input type="text" id="scramble-input" placeholder="Leave empty for random scramble" />
+			<button id="start-trainer">Start Trainer</button>
+		</div>
 		<p id="bottom-indicator" class="indicator"></p>
+		<div id="credit-note" class="indicator">
+			Original creator: <a href="https://github.com/timeopochin/cubetools" target="_blank">timeopochin</a>
+		</div>
 		<div id="reset-buttons" hidden>
 			<button id="reset-colour-scheme">Reset colours</button>
 			<button id="reset-letter-scheme">Reset lettering</button>
