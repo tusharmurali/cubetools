@@ -11,20 +11,25 @@ scramblers["333"].initialize(null, Math);
 // let scramble_str = ""; 
 const cornerMapping = {0: 4, 2: 7}; // A -> index 4 in cornersData, C -> index 7
 const edgeMapping = {1: 10, 2: 9, 20: 5}; // B -> index 10 in edgesData, C -> index 9, U -> 5
+const edgeBufferMap = { "UF": C, "DF": U, "UR": B };
+const cornerBufferMap = { "UFR": C, "UBL": A };
+const cornersSpeffzToLetterScheme = [12,16,21,19,13,18,7,0,20,23,11,8,22,15,4,9,17,14,2,5,6,10,3,1];
+const edgesSpeffzToLetterScheme = [23,21,19,17,16,5,8,1,18,6,10,4,20,2,12,7,22,0,14,3,11,13,15,9];
+const edgeBufferToLetterIndex = {
+	1: 16, // 1 -> B, which in Speffz is UR
+	2: 43, // 2 -> C, which is UF
+	20: 6 // 20 -> U, DF
+}
+const cornerBufferToLetterIndex = {
+	0: 12, // 0 -> A, which in Speffz is UBL
+	2: 21, // 2 -> C, which is UFR
+}
+
 let edge_solution = "", corner_solution = "";
 let edge_letters, corner_letters, edgeIndex, cornerIndex;
 let memoStartTime = null, memoEndTime = null, mistakes = 0;
 
 // Load saved buffer settings
-const edgeBufferMap = {
-  "UF": C,
-  "DF": U,
-  "UR": B
-};
-const cornerBufferMap = {
-  "UFR": C,
-  "UBL": A
-};
 function loadBuffers() {
   const savedEdge = localStorage.getItem("edge_buffer") || "UF"; // default UF
   const savedCorner = localStorage.getItem("corner_buffer") || "UFR"; // default UFR
@@ -115,6 +120,23 @@ function solveAndDisplay(){
 	corner_letters = [];
 	edge_solution = "";
 	corner_solution = "";
+	// console.log(edge_cycles, corner_cycles);
+	edge_cycles = edge_cycles.map((value) => {
+		if (value > 0) {
+			return letterScheme[24 + edgesSpeffzToLetterScheme[value]].charCodeAt(0) - "a".charCodeAt(0);
+		} else {
+			return -1 -(letterScheme[24 + edgesSpeffzToLetterScheme[-(value + 1)]].charCodeAt(0) - "a".charCodeAt(0));
+		}
+	});
+	corner_cycles = corner_cycles.map((value) => {
+		if (value > 0) {
+			return letterScheme[cornersSpeffzToLetterScheme[value]].charCodeAt(0) - "a".charCodeAt(0);
+		} else {
+			return -1 -(letterScheme[cornersSpeffzToLetterScheme[-(value + 1)]].charCodeAt(0) - "a".charCodeAt(0));
+		}
+	});
+	// console.log(edge_cycles, corner_cycles);
+	// edgesSpeffzToLetterScheme.forEach((val) => console.log(letterScheme[24 + val]));
 
     // Edges
     if ( edge_cycles.length != 0 || flipped_edges.length != 0 ) {
@@ -174,7 +196,6 @@ function solveAndDisplay(){
 			}
 		}
 	}
-	// console.log(letter_pairs.indexOf(corner_cycles[corner_cycles - 1]));
 	corner_letters.push("#" + letter_pairs[sticker_targets[corners_to_full[letter_pairs.indexOf(corner_letters[corner_letters.length - 1])]]]);
 
 	console.log(edge_letters, corner_letters, edge_solution, corner_solution);
@@ -492,6 +513,23 @@ function updateLetters() {
 	}
 }
 
+// # store place of every character
+// let res = [] index 0 of res is the indexof "a" in lettersceme
+// for (let i = 0; i < letter_pairs.length; i++) {
+// 	let c = letter_pairs[i].toLowerCase();
+// 	let index = letterScheme.slice(0, 24).indexOf(c);
+// 	res.push(index);
+// }
+
+// res = []
+// for (let i = 0; i < letter_pairs.length; i++) {
+// 	let c = letter_pairs[i].toLowerCase();
+// 	let index = letterScheme.slice(24, 48).indexOf(c);
+// 	res.push(index);
+// }
+// console.log(res.toString());
+// whatever character is in letterScheme[place[0]], I want to map 0 to that character
+
 // Material
 //const pieceMaterial = new THREE.MeshStandardMaterial({ color: 0x0 });
 //const pieceMaterial = new THREE.MeshToonMaterial({ color: 0x0 });
@@ -802,8 +840,8 @@ function reset() {
 	playing = false;
 	setPiecesSolved();
 
-	startLetter = edges ? letterScheme[16] : letterScheme[12];
-
+	startLetter = letterScheme[edges ? edgeBufferToLetterIndex[edge_buffer] : cornerBufferToLetterIndex[corner_buffer]];
+// console.log(corner_buffer)
 	// startLetter = edges ? letterScheme[43] : letterScheme[21]; IF UF/UFR
 
 
@@ -825,7 +863,7 @@ function reset() {
 	currentEdge.flip = true;
 	// currentEdge.answer = letterScheme[43].toUpperCase();
 	currentEdge.buffer = true;
-	console.log(corner_buffer, edge_buffer, cornerMapping[corner_buffer], edgeMapping[edge_buffer])
+	// console.log(corner_buffer, edge_buffer, cornerMapping[corner_buffer], edgeMapping[edge_buffer])
 
 	cornerIndex = 0;
 	edgeIndex = 0;
@@ -1218,12 +1256,12 @@ let mouseDown = false;
 // 	}
 // }
 
-// renderer.domElement.addEventListener("mousedown", (e) => {
-// 	mouseDown = true;
-// 	pointerDown.x = e.clientX;
-// 	pointerDown.y = e.clientY;
-// 	openEditor();
-// });
+renderer.domElement.addEventListener("mousedown", (e) => {
+	mouseDown = true;
+	pointerDown.x = e.clientX;
+	pointerDown.y = e.clientY;
+	// openEditor();
+});
 
 function updateColours() {
 	for (let i = 0; i < stickers.length; i++) {
@@ -1257,7 +1295,7 @@ let selectedSticker = null;
 renderer.domElement.addEventListener("mouseup", (e) => {
 	mouseDown = false;
 	if (
-		playing ||
+		playing || !inEditor ||
 		Math.abs(pointerDown.x - e.clientX) > 10 ||
 		Math.abs(pointerDown.y - e.clientY) > 10
 	) {
