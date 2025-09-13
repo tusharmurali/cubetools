@@ -122,14 +122,14 @@ function solveAndDisplay(){
 	corner_solution = "";
 	// console.log(edge_cycles, corner_cycles);
 	edge_cycles = edge_cycles.map((value) => {
-		if (value > 0) {
+		if (value >= 0) {
 			return letterScheme[24 + edgesSpeffzToLetterScheme[value]].charCodeAt(0) - "a".charCodeAt(0);
 		} else {
 			return -1 -(letterScheme[24 + edgesSpeffzToLetterScheme[-(value + 1)]].charCodeAt(0) - "a".charCodeAt(0));
 		}
 	});
 	corner_cycles = corner_cycles.map((value) => {
-		if (value > 0) {
+		if (value >= 0) {
 			return letterScheme[cornersSpeffzToLetterScheme[value]].charCodeAt(0) - "a".charCodeAt(0);
 		} else {
 			return -1 -(letterScheme[cornersSpeffzToLetterScheme[-(value + 1)]].charCodeAt(0) - "a".charCodeAt(0));
@@ -198,7 +198,7 @@ function solveAndDisplay(){
 	}
 	corner_letters.push("#" + letter_pairs[sticker_targets[corners_to_full[letter_pairs.indexOf(corner_letters[corner_letters.length - 1])]]]);
 
-	console.log(edge_letters, corner_letters, edge_solution, corner_solution);
+	// console.log(edge_letters, corner_letters, edge_solution, corner_solution);
 	// edgeIndex = 0;
 	// cornerIndex = 0;
 
