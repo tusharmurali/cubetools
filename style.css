@@ -259,6 +259,10 @@ button:hover {
   width: max-content;
 }
 
+#buffer-settings {
+  margin-left: 0.4rem;
+}
+
 #buffer-settings span {
   font-weight: bold;
   margin-right: 10px;
