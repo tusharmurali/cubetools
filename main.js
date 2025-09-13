@@ -21,6 +21,7 @@ let memoStartTime = null, memoEndTime = null, mistakes = 0;
 function solveAndDisplay(){
     // Scramble the cube
     var scramble_str = scrambleInput.value;
+
 	if (scramble_str.length === 0) {
 		scramble_str = scramblers["333"].getRandomScramble().scramble_string.replace(/  /g, ' ');
 	}
@@ -43,12 +44,14 @@ function solveAndDisplay(){
     if ( !is_valid_scramble ){
         scrambleInput.value = valid_scramble + " ";
     }
+	// console.log(valid_scramble);
 
     // Cube is scrambled
     scrambleCube(valid_scramble);
 
     // Solve the cube
     solveCube();
+	// console.log(edge_cycles, corner_cycles);
 
     // Solution to the scramble
     edge_letters = [];
@@ -118,8 +121,8 @@ function solveAndDisplay(){
 	corner_letters.push("#" + letter_pairs[sticker_targets[corners_to_full[letter_pairs.indexOf(corner_letters[corner_letters.length - 1])]]]);
 
 	// console.log(edge_letters, corner_letters, edge_solution, corner_solution);
-	edgeIndex = 0;
-	cornerIndex = 0;
+	// edgeIndex = 0;
+	// cornerIndex = 0;
 
     // Solution is displayed
     // $('#edges').html(edge_pairs);
@@ -193,7 +196,7 @@ const parityCheckbox = document.getElementById("parity-checkbox");
 const memoFeedback = document.getElementById("memo-feedback");
 const scrambleInput = document.getElementById("scramble-input");
 
-const cycleBreakDuration = 600;
+const cycleBreakDuration = 1000;
 const transitionDuration = 1000;
 let pausedTime = 0;
 
@@ -818,7 +821,8 @@ function nextCorner() {
         startEdges();
 		return;
 	} else if (corner.cycleBreak) {
-		topIndicator.textContent = currentCorner.answer.toUpperCase() 
+		// console.log(scrambleInput.value, edge_cycles, edge_letters, corner);
+		topIndicator.textContent = (currentCorner.buffer ? "Buffer" : currentCorner.answer.toUpperCase())
 			+ (cornerIndex < corner_letters.length - 1 
 				? " (Break)" 
 				: " (Finished)");
@@ -884,7 +888,7 @@ function nextEdge() {
 		return;
 	} else if (edge && edge.cycleBreak) {
 		// topIndicator.textContent = edgeIndex < edge_letters.length - 1 ? "Break" : "Finished";
-		topIndicator.textContent = currentEdge.answer.toUpperCase() 
+		topIndicator.textContent = (currentEdge.buffer ? "Buffer" : currentEdge.answer.toUpperCase())
 			+ (edgeIndex < edge_letters.length - 1
 				? " (Break)" 
 				: " (Finished)");
@@ -930,6 +934,26 @@ function chunkPairs(str) {
   return str.match(/.{1,2}/g) || [];
 }
 
+function saveMemoSession(duration, mistakes) {
+    const sessions = JSON.parse(localStorage.getItem("memo-sessions") || "[]");
+    sessions.push({ duration, mistakes, date: new Date().toISOString() });
+    localStorage.setItem("memo-sessions", JSON.stringify(sessions));
+}
+
+function getMemoStats() {
+    const sessions = JSON.parse(localStorage.getItem("memo-sessions") || "[]");
+    if (!sessions.length) return { average: 0, mistakesAvg: 0, count: 0 };
+
+    const totalTime = sessions.reduce((sum, s) => sum + s.duration, 0);
+    const totalMistakes = sessions.reduce((sum, s) => sum + s.mistakes, 0);
+
+    return {
+        average: (totalTime / sessions.length).toFixed(2),
+        mistakesAvg: (totalMistakes / sessions.length).toFixed(2),
+        count: sessions.length,
+    };
+}
+
 function promptUserMemo() {
     // playing = false;
     inputBlocked = false;
@@ -971,6 +995,7 @@ function promptUserMemo() {
 		}
 
 		const memoDuration = ((memoEndTime - memoStartTime - pausedTime) / 1000).toFixed(2);
+		saveMemoSession(Number(memoDuration), mistakes);
 		const memoTimeIndicator = document.createElement("span");
 		memoTimeIndicator.classList.add("memo-time");
 		memoTimeIndicator.style.marginTop = "8px";
@@ -981,6 +1006,17 @@ function promptUserMemo() {
 		mistakesIndicator.classList.add("memo-time"); 
 		mistakesIndicator.textContent = `Memo Mistakes: ${mistakes}`;
 		memoFeedback.appendChild(mistakesIndicator);
+
+		const stats = getMemoStats();
+		const averageTimeIndicator = document.createElement("span");
+		averageTimeIndicator.classList.add("memo-time");
+		averageTimeIndicator.textContent = `Average Time: ${stats.average}s`;
+		memoFeedback.appendChild(averageTimeIndicator);
+
+		const averageMistakesIndicator = document.createElement("span");
+		averageMistakesIndicator.classList.add("memo-time");
+		averageMistakesIndicator.textContent = `Average Mistakes: ${stats.mistakesAvg}`;
+		memoFeedback.appendChild(averageMistakesIndicator);
 	};
 }
 
