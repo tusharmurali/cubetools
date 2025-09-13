@@ -20,8 +20,7 @@ var CENTERS = 2;
 var BH      = 0;
 var M2      = 1;
 var OP      = 2;
-var corner_style = OP;
-var edge_style   = OP;
+var pseudo_swap = false;
 
 // Speffz
 var A=0, B=1, C=2, D=3, E=4, F=5, G=6, H=7, I=8, J=9, K=10, L=11, M=12, N=13, O=14, P=15, Q=16, R=17, S=18, T=19, U=20, V=21, W=22, X=23, Z=-1;
@@ -32,12 +31,20 @@ var centers_to_full = [4, 13, 22, 31, 40, 49]; // Mapping of centers array to fu
 
 // Edge and corner cubies
 // Sticker in position 0,0 of cubie arrays represents the buffer
+var corner_buffer = C; // UF
+var edge_buffer = C; // UFR
+// var corner_cubies  = [[A,E,R],[B,Q,N],[C,M,J],[D,I,F],[U,G,L],[V,K,P],[W,O,T],[X,S,H]];
+// var corner_cubies  = [[A,E,R],[B,Q,N],[C,M,J],[D,I,F],[U,G,L],[V,K,P],[W,O,T],[X,S,H]];
 var corner_cubies  = [[A,E,R],[B,Q,N],[C,M,J],[D,I,F],[U,G,L],[V,K,P],[W,O,T],[X,S,H]];
+var corner_buffer_locs = {0: 0, 2: 2};
 var solved_corners = [true, true, true, true, true, true, true, true];
 var corner_cycles  = [];
 var cw_corners     = [];
 var ccw_corners    = [];
-var edge_cubies    = [[U,K],[A,Q],[B,M],[C,I],[D,E],[R,H],[T,N],[L,F],[J,P],[V,O],[W,S],[X,G]];
+// var edge_cubies    = [[U,K],[A,Q],[B,M],[C,I],[D,E],[R,H],[T,N],[L,F],[J,P],[V,O],[W,S],[X,G]];
+// var edge_cubies    = [[U,K],[A,Q],[B,M],[C,I],[D,E],[R,H],[T,N],[L,F],[J,P],[V,O],[W,S],[X,G]];
+var edge_cubies    = [[A,Q],[B,M],[C,I],[D,E],[J,P],[L,F],[R,H],[T,N],[U,K],[V,O],[W,S],[X,G]];
+var edge_buffer_locs = {1: 1, 2: 2, 20: 8};
 var solved_edges   = [true, true, true, true, true, true, true, true, true, true, true, true];
 var edge_cycles    = [];
 var flipped_edges  = [];
@@ -1533,18 +1540,20 @@ function solveCorners(){
 function cycleCornerBuffer(){
     var corner_cycled = false;
 
+    var BC = corner_buffer_locs[corner_buffer];
+
     // If the buffer is solved, replace it with an unsolved corner
-    if ( solved_corners[0] ){
+    if ( solved_corners[BC] ){
         // First unsolved corner is selected
         for (var i=1; i<8 && !corner_cycled; i++){
             if ( !solved_corners[i] ){
                 // Buffer is placed in a... um... buffer
-                var temp_corner = [corners[corner_cubies[0][0]], corners[corner_cubies[0][1]], corners[corner_cubies[0][2]]];
+                var temp_corner = [corners[corner_cubies[BC][0]], corners[corner_cubies[BC][1]], corners[corner_cubies[BC][2]]];
 
                 // Buffer corner is replaced with corner
-                corners[corner_cubies[0][0]] = corners[corner_cubies[i][0]];
-                corners[corner_cubies[0][1]] = corners[corner_cubies[i][1]];
-                corners[corner_cubies[0][2]] = corners[corner_cubies[i][2]];
+                corners[corner_cubies[BC][0]] = corners[corner_cubies[i][0]];
+                corners[corner_cubies[BC][1]] = corners[corner_cubies[i][1]];
+                corners[corner_cubies[BC][2]] = corners[corner_cubies[i][2]];
 
                 // Corner is replaced with buffer
                 corners[corner_cubies[i][0]] = temp_corner[0];
@@ -1555,7 +1564,7 @@ function cycleCornerBuffer(){
                 corner_cycles.push(-sticker_targets[corners_to_full[
                     corner_cycles.length > 0 
                         ? corner_cycles[corner_cycles.length - 1] 
-                        : A
+                        : corner_buffer
                 ]] - 1);
                 // Corner cycle is inserted into solution array
                 corner_cycles.push( corner_cubies[i][0] );
@@ -1567,11 +1576,11 @@ function cycleCornerBuffer(){
     else {
         for (var i=0; i<8 && !corner_cycled; i++){
             for (var j=0; j<3 && !corner_cycled; j++){
-                if ( corners[corner_cubies[0][0]] == corner_cubies[i][j%3] && corners[corner_cubies[0][1]] == corner_cubies[i][(j+1)%3] && corners[corner_cubies[0][2]] == corner_cubies[i][(j+2)%3] ){
+                if ( corners[corner_cubies[BC][0]] == corner_cubies[i][j%3] && corners[corner_cubies[BC][1]] == corner_cubies[i][(j+1)%3] && corners[corner_cubies[BC][2]] == corner_cubies[i][(j+2)%3] ){
                     // Buffer corner is replaced with corner
-                    corners[corner_cubies[0][0]] = corners[corner_cubies[i][j%3]];
-                    corners[corner_cubies[0][1]] = corners[corner_cubies[i][(j+1)%3]];
-                    corners[corner_cubies[0][2]] = corners[corner_cubies[i][(j+2)%3]];
+                    corners[corner_cubies[BC][0]] = corners[corner_cubies[i][j%3]];
+                    corners[corner_cubies[BC][1]] = corners[corner_cubies[i][(j+1)%3]];
+                    corners[corner_cubies[BC][2]] = corners[corner_cubies[i][(j+2)%3]];
 
                     // Corner is solved
                     corners[corner_cubies[i][0]] = corner_cubies[i][0];
@@ -1591,9 +1600,11 @@ function cycleCornerBuffer(){
 function cornersSolved (){
     var corners_solved = true;
 
+    var BC = corner_buffer_locs[corner_buffer];
+
     // Check if corners marked as unsolved haven't been solved yet
     for (var i=0; i<8; i++){
-        if ( i==0 || !solved_corners[i] ){
+        if ( i==BC || !solved_corners[i] ){
             // Corner is solved and oriented
             if ( corners[corner_cubies[i][0]] == corner_cubies[i][0] && corners[corner_cubies[i][1]] == corner_cubies[i][1] && corners[corner_cubies[i][2]] == corner_cubies[i][2] ) {
                 solved_corners[i] = true;
@@ -1601,14 +1612,14 @@ function cornersSolved (){
             // Corner is in correct position but needs to be rotated clockwise
             else if ( corners[corner_cubies[i][0]] == corner_cubies[i][1] && corners[corner_cubies[i][1]] == corner_cubies[i][2] && corners[corner_cubies[i][2]] == corner_cubies[i][0] ){
                 solved_corners[i] = true;
-                if ( i != 0 ){
+                if ( i != BC ){
                     cw_corners.push(corner_cubies[i][0]);
                 }
             }
             // Corner is in correct position but needs to be rotated counter-clockwise
             else if ( corners[corner_cubies[i][0]] == corner_cubies[i][2] && corners[corner_cubies[i][1]] == corner_cubies[i][0] && corners[corner_cubies[i][2]] == corner_cubies[i][1] ){
                 solved_corners[i] = true;
-                if ( i != 0 ){
+                if ( i != BC ){
                     ccw_corners.push(corner_cubies[i][0]);
                 }
             }
@@ -1629,7 +1640,7 @@ function solveEdges(){
     flipped_edges = [];
 
     // Parity is solved by swapping UL and UB
-    if ( edge_style != OP && corner_cycles.length%2 == 1 ){
+    if ( pseudo_swap && corner_cycles.length%2 == 1 ){
         var UB = -1;
         var UL = -1;
 
@@ -1672,7 +1683,7 @@ function cycleEdgeBuffer(){
     var edge_cycled = false;
 
     // Index of the cubie of the edge buffer (in edge_cubies array)
-    var BC = edge_style == OP ? 2 : 0;
+    var BC = edge_buffer_locs[edge_buffer];
 
     // If the buffer is solved, replace it with an unsolved edge
     if ( solved_edges[BC] ){
@@ -1694,7 +1705,7 @@ function cycleEdgeBuffer(){
                 edge_cycles.push(-sticker_targets[edges_to_full[
                     edge_cycles.length > 0 
                         ? edge_cycles[edge_cycles.length - 1] 
-                        : B
+                        : edge_buffer
                 ]] - 1);
                 // Edge cycle is inserted into solution array
                 edge_cycles.push( edge_cubies[i][0] );
@@ -1730,7 +1741,8 @@ function edgesSolved (){
     var edges_solved = true;
 
     // Index of the cubie of the edge buffer (in edge_cubies array)
-    var BC = edge_style == OP ? 2 : 0;
+    var BC = edge_buffer_locs[edge_buffer];
+
 
     // Check if edges marked as unsolved haven't been solved yet
     for (var i=0; i<12; i++){
