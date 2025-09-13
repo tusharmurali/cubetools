@@ -232,7 +232,7 @@ button:hover {
   font-size: 15px;
   line-height: 1.4;
   font-family: "Segoe UI", Roboto, sans-serif;
-  max-width: 420px;
+  max-width: 500px;
   text-align: center;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
   transition: all 0.3s ease;

@@ -25,7 +25,7 @@ const cornerBufferToLetterIndex = {
 	2: 21, // 2 -> C, which is UFR
 }
 
-let edge_solution = "", corner_solution = "";
+let edge_solution = "", corner_solution = "", valid_scramble = "";
 let edge_letters, corner_letters, edgeIndex, cornerIndex;
 let memoStartTime = null, memoEndTime = null, mistakes = 0;
 
@@ -102,7 +102,7 @@ function solveAndDisplay(){
     }
 
     // Invalid permutations are removed from the scramble
-    var valid_scramble = permutations.join(" ");
+    valid_scramble = permutations.join(" ");
     if ( !is_valid_scramble ){
         scrambleInput.value = valid_scramble + " ";
     }
@@ -198,7 +198,7 @@ function solveAndDisplay(){
 	}
 	corner_letters.push("#" + letter_pairs[sticker_targets[corners_to_full[letter_pairs.indexOf(corner_letters[corner_letters.length - 1])]]]);
 
-	// console.log(edge_letters, corner_letters, edge_solution, corner_solution);
+	console.log(edge_letters, corner_letters, edge_solution, corner_solution);
 	// edgeIndex = 0;
 	// cornerIndex = 0;
 
@@ -1082,13 +1082,16 @@ function promptUserMemo() {
 
 		if (edgesCorrect && cornersCorrect && parityCorrect) {
 			memoFeedback.classList.add("success");
-			memoFeedback.textContent = "✅ All correct!";
+			memoFeedback.textContent = 
+				`Scramble: ${valid_scramble}<br>` +
+				"All correct!";
 		} else {
 			const edgePairs = chunkPairs(edge_solution).join(" ");
 			const cornerPairs = chunkPairs(corner_solution).join(" ");
 			memoFeedback.classList.add("error");
 			memoFeedback.innerHTML =
-				`❌ Edges: ${edgePairs}<br>` +
+				`Scramble: ${valid_scramble}<br>` +
+				`Edges: ${edgePairs}<br>` +
 				`Corners: ${cornerPairs}<br>` +
 				`Parity: ${edge_solution.length % 2 === 1 ? "Yes" : "No"}`;
 		}
