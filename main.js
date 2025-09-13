@@ -9,13 +9,70 @@ var letter_pairs = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O",
 
 scramblers["333"].initialize(null, Math);
 // let scramble_str = ""; 
+const cornerMapping = {0: 4, 2: 7}; // A -> index 4 in cornersData, C -> index 7
+const edgeMapping = {1: 10, 2: 9, 20: 5}; // B -> index 10 in edgesData, C -> index 9, U -> 5
 let edge_solution = "", corner_solution = "";
 let edge_letters, corner_letters, edgeIndex, cornerIndex;
 let memoStartTime = null, memoEndTime = null, mistakes = 0;
 
-// Start automatically with random scramble
-// scrambleInput.value = scramblers["333"].getRandomScramble().scramble_string.replace(/  /g, ' ');
-// document.getElementById("scramble-input").value = scramble_str;
+// Load saved buffer settings
+const edgeBufferMap = {
+  "UF": C,
+  "DF": U,
+  "UR": B
+};
+const cornerBufferMap = {
+  "UFR": C,
+  "UBL": A
+};
+function loadBuffers() {
+  const savedEdge = localStorage.getItem("edge_buffer") || "UF"; // default UF
+  const savedCorner = localStorage.getItem("corner_buffer") || "UFR"; // default UFR
+
+  edge_buffer = edgeBufferMap[savedEdge];
+  corner_buffer = cornerBufferMap[savedCorner];
+
+  // Set checkboxes based on saved
+//   const edgeKey = Object.keys(edgeBufferMap).find(k => edgeBufferMap[k] === savedEdge);
+  document.querySelector(`input[name="edge-buffer"][value="${savedEdge}"]`).checked = true;
+
+//   const cornerKey = Object.keys(cornerBufferMap).find(k => cornerBufferMap[k] === savedCorner);
+  document.querySelector(`input[name="corner-buffer"][value="${savedCorner}"]`).checked = true;
+}
+
+function saveBuffers() {
+  const edgeKey = Object.keys(edgeBufferMap).find(k => edgeBufferMap[k] === edge_buffer);
+  localStorage.setItem("edge_buffer", edgeKey);
+  const cornerKey = Object.keys(cornerBufferMap).find(k => cornerBufferMap[k] === corner_buffer);
+  localStorage.setItem("corner_buffer", cornerKey);
+}
+
+function setupBufferCheckboxes() {
+  document.querySelectorAll('input[name="edge-buffer"]').forEach(cb => {
+    cb.addEventListener("change", () => {
+      // Uncheck all others
+      document.querySelectorAll('input[name="edge-buffer"]').forEach(other => {
+        if (other !== cb) other.checked = false;
+      });
+      edge_buffer = edgeBufferMap[cb.value];
+      saveBuffers();
+    });
+  });
+
+  document.querySelectorAll('input[name="corner-buffer"]').forEach(cb => {
+    cb.addEventListener("change", () => {
+      document.querySelectorAll('input[name="corner-buffer"]').forEach(other => {
+        if (other !== cb) other.checked = false;
+      });
+      corner_buffer = cornerBufferMap[cb.value];
+      saveBuffers();
+    });
+  });
+}
+
+// Init
+loadBuffers();
+setupBufferCheckboxes();
 
 // Figures out a solution for the cube and displays it
 function solveAndDisplay(){
@@ -120,7 +177,7 @@ function solveAndDisplay(){
 	// console.log(letter_pairs.indexOf(corner_cycles[corner_cycles - 1]));
 	corner_letters.push("#" + letter_pairs[sticker_targets[corners_to_full[letter_pairs.indexOf(corner_letters[corner_letters.length - 1])]]]);
 
-	// console.log(edge_letters, corner_letters, edge_solution, corner_solution);
+	console.log(edge_letters, corner_letters, edge_solution, corner_solution);
 	// edgeIndex = 0;
 	// cornerIndex = 0;
 
@@ -746,7 +803,9 @@ function reset() {
 	setPiecesSolved();
 
 	startLetter = edges ? letterScheme[16] : letterScheme[12];
-	// startLetter = edges ? letterScheme[43] : letterScheme[21];
+
+	// startLetter = edges ? letterScheme[43] : letterScheme[21]; IF UF/UFR
+
 
 	topIndicator.textContent = `Press ${startLetter.toUpperCase()} to start`;
 	resetButtons.hidden = true;
@@ -756,15 +815,17 @@ function reset() {
 	memoFeedback.style.display = "none";
 	creditNote.style.display = "block";
 
-	currentCorner = { ...cornersData[4] };
+	currentCorner = { ...cornersData[cornerMapping[corner_buffer]] };
 	currentCorner.twist = 0;
 	// currentCorner.answer = letterScheme[21].toUpperCase();
 	currentCorner.buffer = true;
 
-	currentEdge = { ...edgesData[10] };
+	// currentEdge = { ...edgesData[10] };
+	currentEdge = { ...edgesData[edgeMapping[edge_buffer]] };
 	currentEdge.flip = true;
 	// currentEdge.answer = letterScheme[43].toUpperCase();
 	currentEdge.buffer = true;
+	console.log(corner_buffer, edge_buffer, cornerMapping[corner_buffer], edgeMapping[edge_buffer])
 
 	cornerIndex = 0;
 	edgeIndex = 0;

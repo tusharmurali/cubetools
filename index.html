@@ -27,6 +27,19 @@
 			<button id="reset-letter-scheme">Reset lettering</button>
 			<br />
 			<button id="reset-times">Reset data</button>
+			<div id="buffer-settings" class="indicator">
+				<span>Edge Buffer:</span>
+				<div class="buffer-group">
+					<label><input type="checkbox" name="edge-buffer" value="UF">UF</label>
+					<label><input type="checkbox" name="edge-buffer" value="DF">DF</label>
+					<label><input type="checkbox" name="edge-buffer" value="UR">UR</label>
+				</div>
+				<span>Corner Buffer:</span>
+				<div class="buffer-group">
+					<label><input type="checkbox" name="corner-buffer" value="UFR">UFR</label>
+					<label><input type="checkbox" name="corner-buffer" value="UBL">UBL</label>
+				</div>
+			</div>
 		</div>
 		<div id="data-container" hidden>
 			<p class="data-item corner">H</p>
