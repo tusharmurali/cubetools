@@ -461,30 +461,30 @@ function getMeanAndStandardDeviation(array) {
 	return [mean, stddev];
 }
 
-let stickerColours;
+// let stickerColours;
 
 // Colours
-function resetColours() {
+// function resetColours() {
 	const defaultColours = [
 		0x009b48, // Front
-		0xb90000, // Right
+		0xe60000, // Right (previously 0xb90000)
 		0x0045ad, // Back
-		0xff5900, // Left
+		0xff8c00, // Left (previously 0xff5900)
 		0xffd500, // Down
 		0xffffff, // Up
 		0x333333, // Grayed out
 	];
-	localStorage.setItem("colourScheme", JSON.stringify(defaultColours));
-	stickerColours = defaultColours.map((c) => new THREE.Color(c));
-}
+	// localStorage.setItem("colourScheme", JSON.stringify(defaultColours));
+	let stickerColours = defaultColours.map((c) => new THREE.Color(c));
+// }
 
-if (!localStorage.hasOwnProperty("colourScheme")) {
-	resetColours();
-} else {
-	stickerColours = JSON.parse(localStorage.getItem("colourScheme")).map(
-		(c) => new THREE.Color(c),
-	);
-}
+// if (!localStorage.hasOwnProperty("colourScheme")) {
+// 	resetColours();
+// } else {
+// 	stickerColours = JSON.parse(localStorage.getItem("colourScheme")).map(
+// 		(c) => new THREE.Color(c),
+// 	);
+// }
 
 let letterScheme;
 
@@ -1277,21 +1277,21 @@ function updateColours() {
 	// setModePreview();
 }
 
-colourPicker.addEventListener("change", (e) => {
-	if (!selectedSticker) {
-		return;
-	}
-	const newColour = Number("0x" + e.target.value.slice(1));
-	const face = Math.floor(selectedSticker.index / 9);
-	stickerColours[face] = new THREE.Color(newColour);
+// colourPicker.addEventListener("change", (e) => {
+// 	if (!selectedSticker) {
+// 		return;
+// 	}
+// 	const newColour = Number("0x" + e.target.value.slice(1));
+// 	const face = Math.floor(selectedSticker.index / 9);
+// 	stickerColours[face] = new THREE.Color(newColour);
 
-	let colours = JSON.parse(localStorage.getItem("colourScheme"));
-	colours[face] = newColour;
-	localStorage.setItem("colourScheme", JSON.stringify(colours));
+// 	let colours = JSON.parse(localStorage.getItem("colourScheme"));
+// 	colours[face] = newColour;
+// 	localStorage.setItem("colourScheme", JSON.stringify(colours));
 
-	updateColours();
-	// setPiecesSolved();
-});
+// 	updateColours();
+// 	// setPiecesSolved();
+// });
 
 let selectedSticker = null;
 
