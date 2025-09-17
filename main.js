@@ -273,8 +273,10 @@ const cornersInput = document.getElementById("corners-input");
 const parityCheckbox = document.getElementById("parity-checkbox");
 const memoFeedback = document.getElementById("memo-feedback");
 const scrambleInput = document.getElementById("scramble-input");
+const traceCheckbox = document.getElementById("trace-cycle-checkbox");
+const transitionInput = document.getElementById("transition-duration-input");
 
-const cycleBreakDuration = 1000;
+let cycleBreakDuration = 0; // previously 1000
 const transitionDuration = 1000;
 let pausedTime = 0;
 
@@ -294,6 +296,40 @@ scrambleInput.addEventListener("input", (e) => {
     url.searchParams.set("scramble", val);
     window.history.replaceState({}, "", url);
 });
+
+function loadTrainerSettings() {
+	const savedEnabled = localStorage.getItem("trace_cycle_enabled") === "true";
+	const savedDuration = parseInt(localStorage.getItem("trace_cycle_duration"), 10);
+
+	traceCheckbox.checked = savedEnabled;
+	transitionInput.disabled = !savedEnabled;
+
+	if (savedEnabled && !isNaN(savedDuration)) {
+		cycleBreakDuration = savedDuration;
+		transitionInput.value = savedDuration;
+	} else {
+		cycleBreakDuration = 0;
+	}
+}
+
+function saveTrainerSettings() {
+	if (traceCheckbox.checked) {
+		const val = parseInt(transitionInput.value, 10) || 0;
+		cycleBreakDuration = val;
+		localStorage.setItem("trace_cycle_enabled", "true");
+		localStorage.setItem("trace_cycle_duration", val);
+		transitionInput.disabled = false;
+	} else {
+		cycleBreakDuration = 0;
+		localStorage.setItem("trace_cycle_enabled", "false");
+		transitionInput.disabled = true;
+	}
+}
+
+traceCheckbox.addEventListener("change", saveTrainerSettings);
+transitionInput.addEventListener("input", saveTrainerSettings);
+
+loadTrainerSettings();
 
 // Constants
 const abc = "abcdefghijklmnopqrstluvwxyz";
@@ -847,7 +883,7 @@ function reset() {
 
 	topIndicator.textContent = `Press ${startLetter.toUpperCase()} to start`;
 	resetButtons.hidden = true;
-	bottomIndicator.textContent = "Press SPACE to change scheme";
+	bottomIndicator.textContent = "Press SPACE to change settings";
 	scrambleControls.style.display = "flex";
 	memoControls.style.display = "none";
 	memoFeedback.style.display = "none";
@@ -1232,7 +1268,7 @@ document.body.addEventListener("keyup", (e) => {
 				letterMaterial.visible = true;
 				controls.autoRotate = false;
 				// setPiecesSolved();
-				topIndicator.textContent = "Scheme editor";
+				topIndicator.textContent = "Scheme Editor";
 				resetButtons.hidden = false;
 				bottomIndicator.textContent = "Press SPACE to go back";
 				scrambleControls.style.display = "none";

@@ -3,8 +3,8 @@
 	<head>
 		<meta charset="utf-8" />
 		<title>CubeTools</title>
-		<script type="module" crossorigin src="/cubetools/assets/index-D4yGx-sy.js"></script>
-		<link rel="stylesheet" crossorigin href="/cubetools/assets/index-BsqvQkUB.css">
+		<script type="module" crossorigin src="/cubetools/assets/index-CtSfxOxC.js"></script>
+		<link rel="stylesheet" crossorigin href="/cubetools/assets/index-vQD5OHwH.css">
 	</head>
 	<body>
 		<p id="top-indicator" class="indicator"></p>
@@ -24,11 +24,11 @@
 			Original creator: <a href="https://github.com/timeopochin/cubetools" target="_blank">timeopochin</a>
 		</div>
 		<div id="reset-buttons" hidden>
-			<button id="reset-colour-scheme">Reset colours</button>
+			<button id="reset-colour-scheme">Reset colors</button>
 			<button id="reset-letter-scheme">Reset lettering</button>
 			<br />
 			<button id="reset-times">Reset data</button>
-			<div id="buffer-settings" class="indicator">
+			<div id="buffer-settings" class="indicator" style="position: relative;">
 				<span>Edge Buffer:</span>
 				<div class="buffer-group">
 					<label><input type="checkbox" name="edge-buffer" value="UF">UF</label>
@@ -40,6 +40,16 @@
 					<label><input type="checkbox" name="corner-buffer" value="UFR">UFR</label>
 					<label><input type="checkbox" name="corner-buffer" value="UBL">UBL</label>
 				</div>
+			</div>
+			<div id="trainer-settings" class="indicator" style="position: relative;">
+				<label style="display: flex; gap: 8px; align-items: center; font-size: 16px;">
+					<input type="checkbox" id="trace-cycle-checkbox" />
+					Re-Trace to Start of Cycle?
+				</label>
+				<label style="display: flex; gap: 8px; align-items: center; font-size: 16px; font-weight: normal;">
+					Transition (ms):
+					<input type="number" id="transition-duration-input" value="1000" min="0" step="100" style="width: 80px;" />
+				</label>
 			</div>
 		</div>
 		<div id="data-container" hidden>
