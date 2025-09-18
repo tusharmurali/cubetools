@@ -1207,7 +1207,7 @@ function promptUserMemo() {
 
 		const memoAverageTimeIndicator = document.createElement("span");
 		memoAverageTimeIndicator.classList.add("memo-time");
-		memoAverageTimeIndicator.textContent = `Average Memo Time: ${stats.memoAverage}s`;
+		memoAverageTimeIndicator.textContent = `Average Success Time: ${stats.memoAverage}s`;
 		memoFeedback.appendChild(memoAverageTimeIndicator);
 
 		const tracingAverageTimeIndicator = document.createElement("span");
