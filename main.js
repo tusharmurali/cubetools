@@ -1118,21 +1118,30 @@ function chunkPairs(str) {
   return str.match(/.{1,2}/g) || [];
 }
 
-function saveMemoSession(duration, mistakes) {
+function saveMemoSession(duration, mistakes, success) {
     const sessions = JSON.parse(localStorage.getItem("memo-sessions") || "[]");
-    sessions.push({ duration, mistakes, date: new Date().toISOString() });
+    sessions.push({ duration, mistakes, success, date: new Date().toISOString() });
     localStorage.setItem("memo-sessions", JSON.stringify(sessions));
 }
 
 function getMemoStats() {
     const sessions = JSON.parse(localStorage.getItem("memo-sessions") || "[]");
-    if (!sessions.length) return { average: 0, mistakesAvg: 0, count: 0 };
+    if (!sessions.length) return { memoAverage: 0, tracingAverage: 0, mistakesAvg: 0, count: 0 };
 
-    const totalTime = sessions.reduce((sum, s) => sum + s.duration, 0);
-    const totalMistakes = sessions.reduce((sum, s) => sum + s.mistakes, 0);
-
+	let totalMemoTime = 0, totalTracingTime = 0, successes = 0, totalMistakes = 0;
+	sessions.forEach((s) => {
+		if (s.success) {
+			totalMemoTime += s.duration
+			successes += 1
+		} else {
+			totalTracingTime += s.duration
+		}
+		totalMistakes += s.mistakes;
+	});
+	
     return {
-        average: (totalTime / sessions.length).toFixed(2),
+        memoAverage: (totalMemoTime / successes).toFixed(2),
+        tracingAverage: (totalTracingTime / (sessions.length - successes)).toFixed(2),
         mistakesAvg: (totalMistakes / sessions.length).toFixed(2),
         count: sessions.length,
     };
@@ -1160,14 +1169,15 @@ function promptUserMemo() {
 		const parityCorrect = (edge_solution.length % 2 === 1) === userParity;
 		const edgesCorrect = userEdges === edge_solution;
 		const cornersCorrect = userCorners === corner_solution;
+		const success = edgesCorrect && cornersCorrect && parityCorrect;
 
 		memoControls.style.display = "none";
 		memoFeedback.style.display = "block";
 		memoFeedback.className = "";
 
-		if (edgesCorrect && cornersCorrect && parityCorrect) {
+		if (success) {
 			memoFeedback.classList.add("success");
-			memoFeedback.textContent = 
+			memoFeedback.innerHTML = 
 				`Scramble: ${valid_scramble}<br>` +
 				"All correct!";
 		} else {
@@ -1182,27 +1192,33 @@ function promptUserMemo() {
 		}
 
 		const memoDuration = ((memoEndTime - memoStartTime - pausedTime) / 1000).toFixed(2);
-		saveMemoSession(Number(memoDuration), mistakes);
+		saveMemoSession(Number(memoDuration), mistakes, success);
 		const memoTimeIndicator = document.createElement("span");
 		memoTimeIndicator.classList.add("memo-time");
 		memoTimeIndicator.style.marginTop = "8px";
-		memoTimeIndicator.textContent = `Memo Time: ${memoDuration}s`;
+		memoTimeIndicator.textContent = (success ? "Memo" : "Tracing") + ` Time: ${memoDuration}s`;
 		memoFeedback.appendChild(memoTimeIndicator);
 
 		const mistakesIndicator = document.createElement("span");
 		mistakesIndicator.classList.add("memo-time"); 
-		mistakesIndicator.textContent = `Memo Mistakes: ${mistakes}`;
+		mistakesIndicator.textContent = `Tracing Mistakes: ${mistakes}`;
 		memoFeedback.appendChild(mistakesIndicator);
 
 		const stats = getMemoStats();
-		const averageTimeIndicator = document.createElement("span");
-		averageTimeIndicator.classList.add("memo-time");
-		averageTimeIndicator.textContent = `Average Time: ${stats.average}s`;
-		memoFeedback.appendChild(averageTimeIndicator);
+
+		const memoAverageTimeIndicator = document.createElement("span");
+		memoAverageTimeIndicator.classList.add("memo-time");
+		memoAverageTimeIndicator.textContent = `Average Memo Time: ${stats.memoAverage}s`;
+		memoFeedback.appendChild(memoAverageTimeIndicator);
+
+		const tracingAverageTimeIndicator = document.createElement("span");
+		tracingAverageTimeIndicator.classList.add("memo-time");
+		tracingAverageTimeIndicator.textContent = `Average Tracing Time: ${stats.tracingAverage}s`;
+		memoFeedback.appendChild(tracingAverageTimeIndicator);
 
 		const averageMistakesIndicator = document.createElement("span");
 		averageMistakesIndicator.classList.add("memo-time");
-		averageMistakesIndicator.textContent = `Average Mistakes: ${stats.mistakesAvg}`;
+		averageMistakesIndicator.textContent = `Average Tracing Mistakes: ${stats.mistakesAvg}`;
 		memoFeedback.appendChild(averageMistakesIndicator);
 	};
 }
