@@ -246,10 +246,14 @@ const camera = new THREE.PerspectiveCamera(
 );
 const controls = new OrbitControls(camera, renderer.domElement);
 const grayColour = new THREE.Color(0x0b0b0b);
+
+// Adjust this for dimming
+const dimOpacity = 0.75;
 const pieceMaterial = new THREE.MeshStandardMaterial({
 	color: 0x0,
-	roughness: 0.3,
+	roughness: dimOpacity,
 });
+
 const letterMaterial = new THREE.MeshStandardMaterial({
 	color: 0x000000,
 	//roughness: 0.4,
@@ -510,6 +514,7 @@ function getMeanAndStandardDeviation(array) {
 		0xffffff, // Up
 		0x333333, // Grayed out
 	];
+	// const black = new THREE.Color(0x000000);
 	// localStorage.setItem("colourScheme", JSON.stringify(defaultColours));
 	let stickerColours = defaultColours.map((c) => new THREE.Color(c));
 // }
@@ -706,7 +711,7 @@ function createCube(font) {
 		//for (let j = 0; j < 4; j++) {
 		for (let j = 0; j < 4; j++) {
 			const setupSticker = (sticker, skipLetter) => {
-				sticker.children[0].material = new THREE.MeshBasicMaterial();
+				sticker.children[0].material = new THREE.MeshBasicMaterial({ transparent: true, opacity: 1 });
 				sticker.solvedColour = stickerColours[i];
 				sticker.children[1].material = pieceMaterial;
 				side.add(sticker);
@@ -825,6 +830,7 @@ function setPiecesGray(exclude = (i) => i % 9 === 8, alpha = 1.0) {
 		if (exclude(i)) {
 			continue;
 		}
+		stickers[i].children[0].material.opacity = 1;
 		stickers[i].targetColour = new THREE.Color(stickers[i].solvedColour).lerp(
 			stickerColours[6],
 			alpha,
@@ -835,6 +841,7 @@ function setPiecesGray(exclude = (i) => i % 9 === 8, alpha = 1.0) {
 function setPiecesSolved() {
 	for (const sticker of stickers) {
 		sticker.targetColour = sticker.solvedColour;
+		sticker.children[0].material.opacity = 1;
 	}
 }
 
@@ -945,7 +952,7 @@ function nextCorner() {
 			: (currentCorner.buffer 
 				? "Buffer"
 				: currentCorner.answer.toUpperCase());
-
+	
 	setPiecesGray();
 
 	const corner = getNextCorner();
@@ -974,10 +981,44 @@ function nextCorner() {
 	// const twist = index % 3;
 	// const corner = {...cornersData[Math.floor(index / 3)], twist};
 	// console.log(corner);
+
 	for (let i = 0; i < 3; i++) {
-		stickers[currentCorner.stickers[i]].targetColour =
+		// let targetColour = stickers[corner.stickers[(i + corner.twist) % 3]].solvedColour;
+		// highlight one sticker
+		if ((i - currentCorner.twist + 3) % 3 !== 1) {
+			// targetColour = targetColour.clone()
+			// targetColour.lerp(black, 0.07);
+			// targetColour.offsetHSL(0, -0.07, -0.07);
+			
+			// targetColour.transparent = true;
+			// targetColour.opacity = 0.5;
+			// stickers[currentCorner.stickers[i]].children[0].material.transparent = true;
+			stickers[currentCorner.stickers[i]].children[0].material.opacity = dimOpacity;
+
+			// targetColour.lerp(new THREE.Color(0x000000), 0.2);
+		}
+		stickers[currentCorner.stickers[i]].targetColour = 
 			stickers[corner.stickers[(i + corner.twist) % 3]].solvedColour;
+		
+		// if ((i - currentCorner.twist + 3) % 3 === 1) {
+			// addOutline(stickers[currentCorner.stickers[i]].children[0]);
+			// console.log(stickers[currentCorner.stickers[i]].children[0])
+			// stickers[currentCorner.stickers[i]].children[0].material.emissive.set(0xffffff); // Yellow highlight
+			// stickers[currentCorner.stickers[i]].children[0].material.emissiveIntensity = 0.1;
+		// }
+			// .clone().lerp(new THREE.Color(0x000000), i - currentCorner.twist % 3 == 1 ? 0.9 : 0);
 	}
+	// highlight sticker on current corner
+	// console.log(stickers[currentCorner.stickers[(currentCorner.twist + 1) % 3]].targetColour);
+	// console.log(stickers[currentCorner.stickers[(currentCorner.twist + 1) % 3]].children[0].material)
+	// const interp = stickers[currentCorner.stickers[(currentCorner.twist + 1) % 3]].targetColour.clone().offsetHSL(0, 0.3, 0.5);
+	// stickers[currentCorner.stickers[(currentCorner.twist + 1) % 3]].targetColour = stickers[currentCorner.stickers[(currentCorner.twist + 1) % 3]].targetColour.clone().lerp(interp, 0.2);
+	// .children[0].material.emissive.set(0x00ff00);
+	//  = stickers[currentCorner.stickers[(currentCorner.twist + 1) % 3]].targetColour.clone().lerp(new THREE.Color(0xffffff), 0.1);
+	// const base = stickers[currentCorner.stickers[(currentCorner.twist + 1) % 3]].targetColour
+	// stickers[currentCorner.stickers[(currentCorner.twist + 1) % 3]].targetColour = new THREE.Color(0x000000).lerp(base, 0.9);
+	// setPiecesGray((i) => i !== currentCorner.stickers[(currentCorner.twist) % 3], 0.5);
+	// stickers[currentCorner.stickers[(currentCorner.twist + 1) % 3]].targetColour
 
 	let newPos = currentCorner.position;
 	if (allowTwoSideRecognition && [0, 1, 4, 5].includes(newPos)) {
@@ -1038,9 +1079,17 @@ function nextEdge() {
 	}
 
 	for (let i = 0; i < 2; i++) {
-		stickers[currentEdge.stickers[i]].targetColour =
+		// let targetColour = stickers[edge.stickers[(i + edge.flip) % 2]].solvedColour;
+		if (i !== +currentEdge.flip) {
+			// targetColour = targetColour.clone()
+			// targetColour.lerp(black, 0.07);
+			// targetColour.offsetHSL(0, -0.07, -0.07);
+			stickers[currentEdge.stickers[i]].children[0].material.opacity = dimOpacity;
+		}
+		stickers[currentEdge.stickers[i]].targetColour = 
 			stickers[edge.stickers[(i + edge.flip) % 2]].solvedColour;
 	}
+	
 	positionCounter = currentEdge.position;
 
 	const relativeFlip = currentEdge.flip != edge.flip;
