@@ -248,10 +248,10 @@ const controls = new OrbitControls(camera, renderer.domElement);
 const grayColour = new THREE.Color(0x0b0b0b);
 
 // Adjust this for dimming
-const dimOpacity = 0.75;
+const dimOpacity = 0.6;
 const pieceMaterial = new THREE.MeshStandardMaterial({
 	color: 0x0,
-	roughness: dimOpacity,
+	roughness: 0.7,
 });
 
 const letterMaterial = new THREE.MeshStandardMaterial({
