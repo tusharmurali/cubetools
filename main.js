@@ -104,6 +104,7 @@ function solveAndDisplay(){
     // Invalid permutations are removed from the scramble
     valid_scramble = permutations.join(" ");
     if ( !is_valid_scramble ){
+		console.log(valid_scramble);
         scrambleInput.value = valid_scramble + " ";
     }
 	// console.log(valid_scramble);
@@ -198,7 +199,7 @@ function solveAndDisplay(){
 	}
 	corner_letters.push("#" + letter_pairs[sticker_targets[corners_to_full[letter_pairs.indexOf(corner_letters[corner_letters.length - 1])]]]);
 
-	console.log(edge_letters, corner_letters, edge_solution, corner_solution);
+	// console.log(edge_letters, corner_letters, edge_solution, corner_solution);
 	// edgeIndex = 0;
 	// cornerIndex = 0;
 
@@ -1266,7 +1267,6 @@ document.body.addEventListener("keyup", (e) => {
 
 	if (playing) {
 		if (e.key === " ") {
-			console.log("here1");
 
 			for (const timeout of timeouts) {
 				clearTimeout(timeout);
