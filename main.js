@@ -501,10 +501,10 @@ function getMeanAndStandardDeviation(array) {
 	return [mean, stddev];
 }
 
-// let stickerColours;
+let stickerColours;
 
 // Colours
-// function resetColours() {
+function resetColours() {
 	const defaultColours = [
 		0x009b48, // Front
 		0xe60000, // Right (previously 0xb90000)
@@ -514,18 +514,17 @@ function getMeanAndStandardDeviation(array) {
 		0xffffff, // Up
 		0x333333, // Grayed out
 	];
-	// const black = new THREE.Color(0x000000);
-	// localStorage.setItem("colourScheme", JSON.stringify(defaultColours));
-	let stickerColours = defaultColours.map((c) => new THREE.Color(c));
-// }
+	localStorage.setItem("colourScheme", JSON.stringify(defaultColours));
+	stickerColours = defaultColours.map((c) => new THREE.Color(c));
+}
 
-// if (!localStorage.hasOwnProperty("colourScheme")) {
-// 	resetColours();
-// } else {
-// 	stickerColours = JSON.parse(localStorage.getItem("colourScheme")).map(
-// 		(c) => new THREE.Color(c),
-// 	);
-// }
+if (!localStorage.hasOwnProperty("colourScheme")) {
+	resetColours();
+} else {
+	stickerColours = JSON.parse(localStorage.getItem("colourScheme")).map(
+		(c) => new THREE.Color(c),
+	);
+}
 
 let letterScheme;
 
@@ -1267,6 +1266,8 @@ document.body.addEventListener("keyup", (e) => {
 
 	if (playing) {
 		if (e.key === " ") {
+			console.log("here1");
+
 			for (const timeout of timeouts) {
 				clearTimeout(timeout);
 			}
@@ -1294,7 +1295,7 @@ document.body.addEventListener("keyup", (e) => {
 
 	// Input
 	if (selectedSticker) {
-		if (abc.includes(e.key)) {
+		if (abc.includes(e.key) && selectedSticker.index % 9 !== 8) {
 			selectedSticker.parent.parent.children[0].children[
 				selectedSticker.index % 9
 			].geometry = letters[e.key];
@@ -1308,6 +1309,7 @@ document.body.addEventListener("keyup", (e) => {
 		} else {
 			selectedSticker = null;
 		}
+		colourPicker.style.display = "none";
 		setPiecesSolved();
 
 		bottomIndicator.textContent = "Press SPACE to go back";
@@ -1378,21 +1380,22 @@ function updateColours() {
 	// setModePreview();
 }
 
-// colourPicker.addEventListener("change", (e) => {
-// 	if (!selectedSticker) {
-// 		return;
-// 	}
-// 	const newColour = Number("0x" + e.target.value.slice(1));
-// 	const face = Math.floor(selectedSticker.index / 9);
-// 	stickerColours[face] = new THREE.Color(newColour);
+colourPicker.addEventListener("change", (e) => {
+	if (!selectedSticker) {
+		return;
+	}
+	const newColour = Number("0x" + e.target.value.slice(1));
+	const face = Math.floor(selectedSticker.index / 9);
+	stickerColours[face] = new THREE.Color(newColour);
 
-// 	let colours = JSON.parse(localStorage.getItem("colourScheme"));
-// 	colours[face] = newColour;
-// 	localStorage.setItem("colourScheme", JSON.stringify(colours));
+	let colours = JSON.parse(localStorage.getItem("colourScheme"));
+	colours[face] = newColour;
+	localStorage.setItem("colourScheme", JSON.stringify(colours));
 
-// 	updateColours();
-// 	// setPiecesSolved();
-// });
+	updateColours();
+	colourPicker.style.display = "none";
+	// setPiecesSolved();
+});
 
 let selectedSticker = null;
 
@@ -1412,14 +1415,20 @@ renderer.domElement.addEventListener("mouseup", (e) => {
 	// No sticker
 	if (!selectedSticker) {
 		bottomIndicator.textContent = "Press SPACE to go back";
+		colourPicker.style.display = "none";
 		setPiecesSolved();
 		return;
 	}
 
 	if (selectedSticker.index % 9 === 8) {
-		// Center sticker
-		colourPicker.value =
-			"#" + stickers[selectedSticker.index].solvedColour.getHexString();
+		// // Center sticker
+		// colourPicker.value =
+		// 	"#" + stickers[selectedSticker.index].solvedColour.getHexString();
+		// colourPicker.click();
+
+		// Center sticker clicked
+		colourPicker.value = "#" + stickers[selectedSticker.index].solvedColour.getHexString();
+		colourPicker.style.display = "block";
 		colourPicker.click();
 	} else {
 		// Letter sticker

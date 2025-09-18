@@ -339,3 +339,9 @@ button:hover {
 #trainer-settings input[type="checkbox"] {
   margin: auto;
 }
+
+#colour-picker {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+}
