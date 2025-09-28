@@ -3,8 +3,8 @@
 	<head>
 		<meta charset="utf-8" />
 		<title>CubeTools</title>
-		<script type="module" crossorigin src="/cubetools/assets/index-Jnsw2pe4.js"></script>
-		<link rel="stylesheet" crossorigin href="/cubetools/assets/index-uz52TUgo.css">
+		<script type="module" crossorigin src="/cubetools/assets/index-D45yJ4mH.js"></script>
+		<link rel="stylesheet" crossorigin href="/cubetools/assets/index--_BVIHC2.css">
 	</head>
 	<body>
 		<p id="top-indicator" class="indicator"></p>
@@ -15,9 +15,16 @@
 			<button id="submit-memo">Submit</button>
 		</div>
 		<p id="memo-feedback" style="font-weight: bold;"></p>
-		<div id="scramble-controls">
-			<input type="text" id="scramble-input" placeholder="Leave empty for random scramble" />
+		<div id="scramble-controls" style="bottom: 60px;">
+			<input type="text" id="scramble-input" placeholder="Leave empty for random scramble" style="width: 320px;" />
 			<button id="start-trainer">Start Trainer</button>
+		</div>
+		<div id="image-container" style="display: flex; justify-content: center;">
+			<div id="image-controls" style="display: flex; bottom: 30%;">
+				<input type="text" id="image-input" placeholder="Image (optional)" style="width: 220px;" />
+				<button id="save-image">Next</button>
+			</div>
+			<p id="image-list" class="indicator" style="display: flex;"></p>
 		</div>
 		<p id="bottom-indicator" class="indicator"></p>
 		<div id="credit-note" class="indicator">
@@ -49,6 +56,10 @@
 				<label style="display: flex; gap: 8px; align-items: center; font-size: 16px; font-weight: normal;">
 					Transition (ms):
 					<input type="number" id="transition-duration-input" value="1000" min="0" step="100" style="width: 80px;" />
+				</label>
+				<label style="display: flex; gap: 8px; align-items: start; font-size: 16px;">
+					<input type="checkbox" id="memo-only-checkbox" />
+					Memo Only Mode
 				</label>
 			</div>
 		</div>

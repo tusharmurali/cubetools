@@ -271,6 +271,8 @@ const bottomIndicator = document.getElementById("bottom-indicator");
 const resetButtons = document.getElementById("reset-buttons");
 const dataContainer = document.getElementById("data-container");
 const scrambleControls = document.getElementById("scramble-controls");
+const imageControlsContainer = document.getElementById("image-container");
+const imageControls = document.getElementById("image-controls");
 const creditNote = document.getElementById("credit-note");
 const memoControls = document.getElementById("memo-controls");
 const edgesInput = document.getElementById("edges-input");
@@ -280,10 +282,143 @@ const memoFeedback = document.getElementById("memo-feedback");
 const scrambleInput = document.getElementById("scramble-input");
 const traceCheckbox = document.getElementById("trace-cycle-checkbox");
 const transitionInput = document.getElementById("transition-duration-input");
+const memoOnlyCheckbox = document.getElementById("memo-only-checkbox");
+const imageInput = document.getElementById("image-input");
+const saveImageBtn = document.getElementById("save-image");
+const imageList = document.getElementById("image-list");
 
 let cycleBreakDuration = 0; // previously 1000
 const transitionDuration = 1000;
 let pausedTime = 0;
+
+let memoOnly = false;
+if (!localStorage.getItem("memoOnly")) {
+	localStorage.setItem("memoOnly", false);
+} else {
+	memoOnly = localStorage.getItem("memoOnly") === "true";
+	memoOnlyCheckbox.checked = memoOnly;
+}
+
+memoOnlyCheckbox.addEventListener("change", (e) => {
+  memoOnly = e.target.checked;
+  localStorage.setItem("memoOnly", memoOnly);
+});
+
+let memoImages = [];
+
+function loadImages() {
+    imageList.innerHTML = "";
+    memoImages.forEach((text, idx) => {
+		if (text === -1) {
+			const divider = document.createElement("div");
+			divider.style.width = "2px";
+			divider.style.background = "#aaa";
+			divider.style.margin = "0 8px";
+			divider.style.alignSelf = "stretch";
+			imageList.appendChild(divider);
+			return;
+		}
+        const wrapper = document.createElement("span");
+        wrapper.style.display = "inline-block";
+        wrapper.style.margin = "4px";
+        wrapper.style.padding = "4px 6px";
+        wrapper.style.border = "1px solid #ccc";
+        wrapper.style.borderRadius = "4px";
+        wrapper.style.cursor = "pointer";
+        wrapper.style.position = "relative";
+
+        // Actual text (invisible by default, but sets width)
+        const textNode = document.createElement("span");
+        textNode.textContent = text;
+        textNode.style.visibility = "hidden"; // reserve space
+		textNode.style.whiteSpace = "pre";
+        wrapper.appendChild(textNode);
+
+        // Placeholder sits on top
+        const placeholder = document.createElement("span");
+        placeholder.textContent = "■";
+        placeholder.style.position = "absolute";
+        placeholder.style.top = "0";
+        placeholder.style.left = "0";
+        placeholder.style.right = "0";
+        placeholder.style.bottom = "0";
+        placeholder.style.display = "flex";
+        placeholder.style.alignItems = "center";
+        placeholder.style.justifyContent = "center";
+        // placeholder.style.background = "white";
+        placeholder.style.transition = "opacity 0.2s";
+        wrapper.appendChild(placeholder);
+
+        // Hover swaps visibility
+        wrapper.onmouseenter = () => {
+            placeholder.style.opacity = "0";
+            textNode.style.visibility = "visible";
+        };
+        wrapper.onmouseleave = () => {
+            placeholder.style.opacity = "1";
+            textNode.style.visibility = "hidden";
+        };
+
+        // Click to edit
+        wrapper.onclick = () => {
+			if (!playing) return;
+            const input = document.createElement("input");
+            input.type = "text";
+            input.value = text;
+            input.style.width = "100px";
+
+            input.onblur = () => saveEdit(idx, input.value);
+            input.onkeydown = (e) => {
+                if (e.key === "Enter") input.blur();
+            };
+
+            wrapper.innerHTML = "";
+            wrapper.appendChild(input);
+            input.focus();
+        };
+
+        imageList.appendChild(wrapper);
+    });
+}
+
+
+
+function saveEdit(idx, newValue) {
+	if (!newValue.trim()) {
+		memoImages.splice(idx, 1)
+	} else {
+    	memoImages[idx] = newValue.trim();
+	}
+    loadImages();
+}
+
+
+function saveImage() {
+	if (inputBlocked) return;
+    const text = imageInput.value.trim();
+	const ellapsedTime = new Date().getTime() - startTime;
+	addTime(ellapsedTime);
+	if (edges) {
+		nextEdge();
+	} else {
+		nextCorner();
+	}
+    if (!text) return;
+
+    memoImages.push(text);
+    imageInput.value = "";
+    loadImages();
+}
+
+function removeImage(index) {
+    memoImages.splice(index, 1);
+    loadImages();
+}
+
+
+saveImageBtn.addEventListener("click", saveImage);
+loadImages();
+
 
 document.getElementById("start-trainer").addEventListener("click", startGame);
 
@@ -481,6 +616,7 @@ updateTimes();
 
 function addTime(time) {
 	const index = edges ? currentEdge.index : currentCorner.index;
+	if (!index) return;
 	times[index].push(time);
 	//times[index].sort((a, b) => a - b);
 	localStorage.setItem("times-" + index, JSON.stringify(times[index]));
@@ -865,7 +1001,10 @@ function reset() {
 	edges = false;
 	mistakes = 0;
 	pausedTime = 0;
+	memoImages = [];
+	loadImages();
 	letterMaterial.visible = false;
+	cube.visible = true;
 
 	if (resetTimeout) {
 		clearTimeout(resetTimeout);
@@ -888,12 +1027,16 @@ function reset() {
 	// startLetter = edges ? letterScheme[43] : letterScheme[21]; IF UF/UFR
 
 
+	topIndicator.style.top = "0";
 	topIndicator.textContent = `Press ${startLetter.toUpperCase()} to start`;
 	resetButtons.hidden = true;
 	bottomIndicator.textContent = "Press SPACE to change settings";
 	scrambleControls.style.display = "flex";
+	imageControls.style.display = "flex"
+	imageControlsContainer.style.display = "none";
 	memoControls.style.display = "none";
 	memoFeedback.style.display = "none";
+	creditNote.innerHTML = `Original creator: <a href="https://github.com/timeopochin/cubetools" target="_blank">timeopochin</a>`;
 	creditNote.style.display = "block";
 
 	currentCorner = { ...cornersData[cornerMapping[corner_buffer]] };
@@ -945,13 +1088,30 @@ function getNextEdge() {
 let inputBlocked = false;
 
 function nextCorner() {
-	// console.log(currentCorner);
 	topIndicator.textContent = 
-		currentCorner.twistStart
+		(currentCorner.twistStart && !memoOnly)
 			? currentCorner.answer.toUpperCase() + " (Twist)"
 			: (currentCorner.buffer 
 				? "Buffer"
 				: currentCorner.answer.toUpperCase());
+
+	if (memoOnly) {
+		if (cornerIndex === corner_letters.length - 1)
+			topIndicator.textContent += " (Final)"
+		else if (cornerIndex >= corner_letters.length) {
+			startEdges();
+			return;
+		}
+		if (currentCorner.cycleBreak && !currentCorner.twistStart) {
+			inputBlocked = true;
+			pausedTime += cycleBreakDuration;
+			setTimeout(() => {
+				inputBlocked = false;
+				nextCorner();
+			}, cycleBreakDuration);
+		}
+	}
+	console.log(memoImages);
 	
 	setPiecesGray();
 
@@ -962,7 +1122,7 @@ function nextCorner() {
 		// Auto-start edges
         startEdges();
 		return;
-	} else if (corner.cycleBreak) {
+	} else if (corner.cycleBreak && !memoOnly) {
 		// console.log(scrambleInput.value, edge_cycles, edge_letters, corner);
 		topIndicator.textContent = (currentCorner.buffer ? "Buffer" : currentCorner.answer.toUpperCase())
 			+ (cornerIndex < corner_letters.length - 1 
@@ -1046,11 +1206,28 @@ function nextCorner() {
 
 function nextEdge() {
 	topIndicator.textContent = 
-		currentEdge.flipStart
+		(currentEdge.flipStart && !memoOnly)
 			? currentEdge.answer.toUpperCase() + " (Flip)"
 			: (currentEdge.buffer 
 				? "Buffer"
 				: currentEdge.answer.toUpperCase());
+
+	if (memoOnly) {
+		if (edgeIndex === edge_letters.length - 1)
+			topIndicator.textContent += " (Final)"
+		else if (edgeIndex >= edge_letters.length) {
+			promptUserMemo();
+			return;
+		}
+		if (currentEdge.cycleBreak && !currentEdge.flipStart || edgeIndex === 0) {
+			inputBlocked = true;
+			pausedTime += cycleBreakDuration;
+			setTimeout(() => {
+				inputBlocked = false;
+				nextEdge();
+			}, cycleBreakDuration);
+		}
+	}
 
 	setPiecesGray();
 
@@ -1062,7 +1239,7 @@ function nextEdge() {
 			promptUserMemo();
 		}
 		return;
-	} else if (edge && edge.cycleBreak) {
+	} else if (edge && edge.cycleBreak && !memoOnly) {
 		// topIndicator.textContent = edgeIndex < edge_letters.length - 1 ? "Break" : "Finished";
 		topIndicator.textContent = (currentEdge.buffer ? "Buffer" : currentEdge.answer.toUpperCase())
 			+ (edgeIndex < edge_letters.length - 1
@@ -1110,8 +1287,13 @@ function startEdges() {
     edges = true;
     edgeIndex = -1;
     topIndicator.textContent = "Get ready for edges...";
+	memoImages.push(-1);
 	pausedTime += transitionDuration;
-    setTimeout(nextEdge, transitionDuration);
+	imageList.appendChild(document.createElement("br"));
+    setTimeout(() => {
+		nextEdge();
+		if (memoOnly) nextEdge();
+	}, transitionDuration);
 }
 
 function chunkPairs(str) {
@@ -1148,11 +1330,14 @@ function getMemoStats() {
 }
 
 function promptUserMemo() {
-    // playing = false;
+    playing = false;
     inputBlocked = false;
     topIndicator.textContent = "";
 
     memoControls.style.display = "flex";
+	// imageControlsContainer.style.display = "none";
+	imageControls.style.display = "none";
+	creditNote.style.display = "none";
     // memoFeedback.style.display = "block";
     edgesInput.value = "";
     cornersInput.value = "";
@@ -1199,9 +1384,10 @@ function promptUserMemo() {
 		memoTimeIndicator.textContent = (success ? "Memo" : "Tracing") + ` Time: ${memoDuration}s`;
 		memoFeedback.appendChild(memoTimeIndicator);
 
+		const type = !memoOnly ? "Tracing" : "Memo";
 		const mistakesIndicator = document.createElement("span");
 		mistakesIndicator.classList.add("memo-time"); 
-		mistakesIndicator.textContent = `Tracing Mistakes: ${mistakes}`;
+		mistakesIndicator.textContent = `${type} Mistakes: ${mistakes}`;
 		memoFeedback.appendChild(mistakesIndicator);
 
 		const stats = getMemoStats();
@@ -1213,12 +1399,12 @@ function promptUserMemo() {
 
 		const tracingAverageTimeIndicator = document.createElement("span");
 		tracingAverageTimeIndicator.classList.add("memo-time");
-		tracingAverageTimeIndicator.textContent = `Average Tracing Time: ${stats.tracingAverage}s`;
+		tracingAverageTimeIndicator.textContent = `Average ${type} Time: ${stats.tracingAverage}s`;
 		memoFeedback.appendChild(tracingAverageTimeIndicator);
 
 		const averageMistakesIndicator = document.createElement("span");
 		averageMistakesIndicator.classList.add("memo-time");
-		averageMistakesIndicator.textContent = `Average Tracing Mistakes: ${stats.mistakesAvg}`;
+		averageMistakesIndicator.textContent = `Average ${type} Mistakes: ${stats.mistakesAvg}`;
 		memoFeedback.appendChild(averageMistakesIndicator);
 	};
 }
@@ -1232,8 +1418,12 @@ function startGame() {
 	solveAndDisplay();
 
 	bottomIndicator.textContent = "Press SPACE to exit";
-	scrambleControls.style.display = "none";
+	if (memoOnly) {
+		imageControlsContainer.style.display = "flex";
+		cube.visible = false;
+	} 
 	creditNote.style.display = "none";
+	scrambleControls.style.display = "none";
 	playing = true;
 	controls.enableRotate = false;
 	controls.autoRotate = false;
@@ -1242,7 +1432,8 @@ function startGame() {
 
 	memoStartTime = Date.now();
     memoEndTime = null;
-	topIndicator.textContent = "Get ready...";
+	topIndicator.textContent = "Get ready for corners...";
+	if (memoOnly) topIndicator.style.top = "30%";
 	pausedTime += transitionDuration;
 	timeouts.push(
 		setTimeout(() => {
@@ -1250,6 +1441,13 @@ function startGame() {
 				nextEdge();
 			} else {
 				nextCorner();
+			}
+			if (memoOnly) {
+				if (edges) {
+					nextEdge();
+				} else {
+					nextCorner();
+				}
 			}
 		}, transitionDuration),
 	);
@@ -1285,7 +1483,7 @@ document.body.addEventListener("keyup", (e) => {
 			} else {
 				nextCorner();
 			}
-		} else if (abc.includes(e.key)) {
+		} else if (abc.includes(e.key) && !memoOnly) {
 			mistakes++;
 			scene.background = new THREE.Color(0x862121);
 			setTimeout(() => (scene.background = grayColour), 200);
