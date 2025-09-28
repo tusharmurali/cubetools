@@ -1111,7 +1111,6 @@ function nextCorner() {
 			}, cycleBreakDuration);
 		}
 	}
-	console.log(memoImages);
 	
 	setPiecesGray();
 
@@ -1235,7 +1234,6 @@ function nextEdge() {
 	if (!edge) {
 		if (edgeIndex !== 0) {
 			topIndicator.textContent = "Finished";
-			memoEndTime = Date.now();
 			promptUserMemo();
 		}
 		return;
@@ -1330,9 +1328,13 @@ function getMemoStats() {
 }
 
 function promptUserMemo() {
-    playing = false;
+	memoEndTime = Date.now();
+    // playing = false;
     inputBlocked = false;
     topIndicator.textContent = "";
+	imageList.childNodes.forEach(node => {
+		node.onclick = () => {};
+	});
 
     memoControls.style.display = "flex";
 	// imageControlsContainer.style.display = "none";
