@@ -34,7 +34,6 @@ var centers_to_full = [4, 13, 22, 31, 40, 49]; // Mapping of centers array to fu
 var corner_buffer = C; // UF
 var edge_buffer = C; // UFR
 // var corner_cubies  = [[A,E,R],[B,Q,N],[C,M,J],[D,I,F],[U,G,L],[V,K,P],[W,O,T],[X,S,H]];
-// var corner_cubies  = [[A,E,R],[B,Q,N],[C,M,J],[D,I,F],[U,G,L],[V,K,P],[W,O,T],[X,S,H]];
 var corner_cubies  = [[A,E,R],[B,Q,N],[C,M,J],[D,I,F],[U,G,L],[V,K,P],[W,O,T],[X,S,H]];
 var corner_buffer_locs = {0: 0, 2: 2};
 var solved_corners = [true, true, true, true, true, true, true, true];
