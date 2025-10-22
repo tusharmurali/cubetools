@@ -249,10 +249,11 @@ const controls = new OrbitControls(camera, renderer.domElement);
 const grayColour = new THREE.Color(0x0b0b0b);
 
 // Adjust this for dimming
-const dimOpacity = 0.6;
+// const dimOpacity = 0.6;
 const pieceMaterial = new THREE.MeshStandardMaterial({
 	color: 0x0,
-	roughness: 0.7,
+	// roughness: 0.3,
+	roughness: 0.3
 });
 
 const letterMaterial = new THREE.MeshStandardMaterial({
@@ -286,6 +287,7 @@ const memoOnlyCheckbox = document.getElementById("memo-only-checkbox");
 const imageInput = document.getElementById("image-input");
 const saveImageBtn = document.getElementById("save-image");
 const imageList = document.getElementById("image-list");
+const submitBtn = document.getElementById("submit-memo");
 
 let cycleBreakDuration = 0; // previously 1000
 const transitionDuration = 1000;
@@ -1014,6 +1016,7 @@ function reset() {
 			controls.autoRotate = true;
 		}
 	}, 500);
+	clearHighlight();
 
 	positionCounter = 20;
 	//controls.autoRotate = true;
@@ -1140,11 +1143,28 @@ function nextCorner() {
 	// const twist = index % 3;
 	// const corner = {...cornersData[Math.floor(index / 3)], twist};
 	// console.log(corner);
+	const relativeTwist = (currentCorner.twist + corner.twist) % 3;
+	const index = corner.position * 3 + relativeTwist;
+	const answer = letterScheme[index];
+
 
 	for (let i = 0; i < 3; i++) {
 		// let targetColour = stickers[corner.stickers[(i + corner.twist) % 3]].solvedColour;
 		// highlight one sticker
-		if ((i - currentCorner.twist + 3) % 3 !== 1) {
+		// if ((i - currentCorner.twist + 3) % 3 !== 1) {
+		// 	// targetColour = targetColour.clone()
+		// 	// targetColour.lerp(black, 0.07);
+		// 	// targetColour.offsetHSL(0, -0.07, -0.07);
+			
+		// 	// targetColour.transparent = true;
+		// 	// targetColour.opacity = 0.5;
+		// 	// stickers[currentCorner.stickers[i]].children[0].material.transparent = true;
+		// 	// stickers[currentCorner.stickers[i]].children[0].material.opacity = dimOpacity;
+		// 	highlightSticker(stickers[currentCorner.stickers[i]]);
+
+		// 	// targetColour.lerp(new THREE.Color(0x000000), 0.2);
+		// }
+		if ((i - currentCorner.twist + 3) % 3 == 1) {
 			// targetColour = targetColour.clone()
 			// targetColour.lerp(black, 0.07);
 			// targetColour.offsetHSL(0, -0.07, -0.07);
@@ -1152,13 +1172,19 @@ function nextCorner() {
 			// targetColour.transparent = true;
 			// targetColour.opacity = 0.5;
 			// stickers[currentCorner.stickers[i]].children[0].material.transparent = true;
-			stickers[currentCorner.stickers[i]].children[0].material.opacity = dimOpacity;
-
+			// stickers[currentCorner.stickers[i]].children[0].material.opacity = dimOpacity;
+			// console.log(currentCorner.twist);
+			// console.log(corner.twist);
+			// how we get the answer:
+			// use (new) corner at twist = currentCorner.twist + corner.twist
+			//   if not working try with twist = corner.twist
+			// 
+			highlightSticker(stickers[currentCorner.stickers[i]]);
+			// console.log(i);
 			// targetColour.lerp(new THREE.Color(0x000000), 0.2);
 		}
 		stickers[currentCorner.stickers[i]].targetColour = 
 			stickers[corner.stickers[(i + corner.twist) % 3]].solvedColour;
-		
 		// if ((i - currentCorner.twist + 3) % 3 === 1) {
 			// addOutline(stickers[currentCorner.stickers[i]].children[0]);
 			// console.log(stickers[currentCorner.stickers[i]].children[0])
@@ -1187,9 +1213,9 @@ function nextCorner() {
 	positionCounter = newPos;
 
 	
-	const relativeTwist = (currentCorner.twist + corner.twist) % 3;
-	const index = corner.position * 3 + relativeTwist;
-	const answer = letterScheme[index];
+	// const relativeTwist = (currentCorner.twist + corner.twist) % 3;
+	// const index = corner.position * 3 + relativeTwist;
+	// const answer = letterScheme[index];
 	// console.log(index, Math.floor(index / 3), corner.position, index % 3, relativeTwist, answer, letterScheme.indexOf(answer));
 
 	currentCorner = { ...corner };
@@ -1255,11 +1281,12 @@ function nextEdge() {
 
 	for (let i = 0; i < 2; i++) {
 		// let targetColour = stickers[edge.stickers[(i + edge.flip) % 2]].solvedColour;
-		if (i !== +currentEdge.flip) {
+		if (i === +currentEdge.flip) {
 			// targetColour = targetColour.clone()
 			// targetColour.lerp(black, 0.07);
 			// targetColour.offsetHSL(0, -0.07, -0.07);
-			stickers[currentEdge.stickers[i]].children[0].material.opacity = dimOpacity;
+			// stickers[currentEdge.stickers[i]].children[0].material.opacity = dimOpacity;
+			highlightSticker(stickers[currentEdge.stickers[i]]);
 		}
 		stickers[currentEdge.stickers[i]].targetColour = 
 			stickers[edge.stickers[(i + edge.flip) % 2]].solvedColour;
@@ -1281,6 +1308,34 @@ function nextEdge() {
 	//console.log(answer);
 }
 
+function highlightSticker(sticker) {
+    clearHighlight();
+
+    // Use black for very light stickers, yellow otherwise
+    const outlineColor = 0xC4C4C4;
+
+    const outlineGeo = new THREE.EdgesGeometry(sticker.children[0].geometry);
+    const outlineMat = new THREE.LineBasicMaterial({ color: outlineColor, linewidth: 3 });
+    const outline = new THREE.LineSegments(outlineGeo, outlineMat);
+
+    outline.position.copy(sticker.children[0].position);
+    // outline.rotation.copy(sticker.children[0].rotation);
+    outline.scale.copy(sticker.children[0].scale).multiplyScalar(1.015);
+
+    sticker.add(outline);
+    window.lastHighlight = outline;
+}
+
+function clearHighlight() {
+	if (window.lastHighlight) {
+        if (window.lastHighlight.parent) {
+            window.lastHighlight.parent.remove(window.lastHighlight);
+        }
+        window.lastHighlight = null;
+    }
+}
+
+
 function startEdges() {
     edges = true;
     edgeIndex = -1;
@@ -1288,6 +1343,7 @@ function startEdges() {
 	memoImages.push(-1);
 	pausedTime += transitionDuration;
 	imageList.appendChild(document.createElement("br"));
+	clearHighlight();
     setTimeout(() => {
 		nextEdge();
 		if (memoOnly) nextEdge();
@@ -1335,6 +1391,7 @@ function promptUserMemo() {
 	imageList.childNodes.forEach(node => {
 		node.onclick = () => {};
 	});
+	clearHighlight();
 
     memoControls.style.display = "flex";
 	// imageControlsContainer.style.display = "none";
@@ -1347,7 +1404,6 @@ function promptUserMemo() {
     memoFeedback.textContent = "";
 
     // Hook up submit button
-    const submitBtn = document.getElementById("submit-memo");
     submitBtn.onclick = () => {
 		const userEdges = edgesInput.value.replace(/\s+/g, "").toUpperCase();
 		const userCorners = cornersInput.value.replace(/\s+/g, "").toUpperCase();
@@ -1489,7 +1545,9 @@ document.body.addEventListener("keyup", (e) => {
 			mistakes++;
 			scene.background = new THREE.Color(0x862121);
 			setTimeout(() => (scene.background = grayColour), 200);
-		}
+		} else if (e.key === "Enter" && memoControls.style.display === "flex") {
+        	submitBtn.click();
+    	}
 		return;
 	}
 
